@@ -1,0 +1,257 @@
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import Header from './components/Header/Header';
+import LaptopScene from './components/Laptop/LaptopScene';
+import FileTree from './components/Explorer/FileTree';
+import CodeViewer from './components/Explorer/CodeViewer';
+import CircuitBoard from './components/Common/CircuitBoard';
+import DependencyReadout from './components/Dependency/DependencyReadout';
+import ImpactReadout from './components/ImpactAnalysis/ImpactReadout';
+import PresetSelector from './components/FailureAnalysis/PresetSelector';
+import AnalysisResult from './components/FailureAnalysis/AnalysisResult';
+import AiInsights from './components/AiInsights/AiInsights';
+import Footer from './components/Footer/Footer';
+import { FAILURE_PRESETS, analyzeErrorLog } from './data/failurePresets';
+
+export default function App() {
+  const [activePage, setActivePage] = useState('home');
+  const [currentSlide, setCurrentSlide] = useState(-1);
+
+  // Explorer State
+  const [selectedFile, setSelectedFile] = useState('src/utils/format.ts');
+
+  // Dependency Intelligence State
+  const [depsActive, setDepsActive] = useState({
+    'src/billing/invoice.ts': true
+  });
+
+  // Change Impact Analysis State
+  const [impactActive, setImpactActive] = useState({
+    'src/db/client.ts': true
+  });
+
+  // Failure Analysis & AI Insights State
+  const [errorLog, setErrorLog] = useState(FAILURE_PRESETS[0].log);
+  const [activePresetIndex, setActivePresetIndex] = useState(0);
+  const [analysisResult, setAnalysisResult] = useState(FAILURE_PRESETS[0]);
+
+  // Board refs for hit testing
+  const depsBoardRef = useRef(null);
+  const impactBoardRef = useRef(null);
+
+  const handleToggleDepNode = useCallback((k) => {
+    setDepsActive((prev) => ({
+      ...prev,
+      [k]: !prev[k]
+    }));
+  }, []);
+
+  const handleToggleImpactNode = useCallback((k) => {
+    setImpactActive((prev) => ({
+      ...prev,
+      [k]: !prev[k]
+    }));
+  }, []);
+
+  const handleSelectPreset = useCallback((idx) => {
+    const preset = FAILURE_PRESETS[idx];
+    setErrorLog(preset.log);
+    setActivePresetIndex(idx);
+    setAnalysisResult(preset);
+  }, []);
+
+  const handleAnalyzeError = useCallback(
+    (customText) => {
+      const textToAnalyze = customText !== undefined ? customText : errorLog;
+      const result = analyzeErrorLog(textToAnalyze);
+      setAnalysisResult(result);
+      if (result) {
+        const idx = FAILURE_PRESETS.findIndex((p) => p.n === result.n);
+        setActivePresetIndex(idx >= 0 ? idx : null);
+      } else {
+        setActivePresetIndex(null);
+      }
+    },
+    [errorLog]
+  );
+
+  const handleSelectPage = (pageId) => {
+    setActivePage(pageId);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  return (
+    <>
+      {/* Real Fixed Navbar - never scrolls away */}
+      <Header
+        activePage={activePage}
+        onSelectPage={handleSelectPage}
+      />
+
+      {/* PAGE 1: 3D Studio / Home */}
+      {activePage === 'home' && (
+        <LaptopScene
+          currentSlide={currentSlide}
+          onSlideChange={setCurrentSlide}
+          selectedFile={selectedFile}
+          onSelectFile={setSelectedFile}
+          depsActive={depsActive}
+          onToggleDepNode={handleToggleDepNode}
+          impactActive={impactActive}
+          onToggleImpactNode={handleToggleImpactNode}
+          errorLog={errorLog}
+          onChangeErrorLog={(val) => {
+            setErrorLog(val);
+            handleAnalyzeError(val);
+          }}
+          onAnalyzeError={() => handleAnalyzeError(errorLog)}
+          activePresetIndex={activePresetIndex}
+          onSelectPreset={handleSelectPreset}
+          analysisResult={analysisResult}
+          depsBoardRef={depsBoardRef}
+          impactBoardRef={impactBoardRef}
+          onOpenFullView={(pageId) => handleSelectPage(pageId)}
+        />
+      )}
+
+      {/* PAGE 2: Full Codebase Explorer */}
+      {activePage === 'explorer' && (
+        <div className="full-page">
+          <div className="page-banner">
+            <span className="tag">
+              <span className="led"></span>Codebase Explorer
+            </span>
+            <h1>Open any project and see what is inside.</h1>
+            <p>
+              Upload a ZIP or connect a supported repository. CodeArchi lists every file and folder, marks which ones it can read, and lets you view the content in high resolution.
+            </p>
+          </div>
+          <div className="panel unit" style={{ padding: '24px' }}>
+            <div
+              className="explorer"
+              style={{
+                gridTemplateColumns: 'minmax(240px, 280px) minmax(0, 1fr)',
+                gap: '24px'
+              }}
+            >
+              <FileTree
+                selectedFile={selectedFile}
+                onSelectFile={setSelectedFile}
+              />
+              <CodeViewer selectedFile={selectedFile} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PAGE 3: Full Dependency Intelligence */}
+      {activePage === 'deps' && (
+        <div className="full-page">
+          <div className="page-banner">
+            <span className="tag">
+              <span className="led"></span>Dependency Intelligence
+            </span>
+            <h1>See how files connect.</h1>
+            <p>
+              Imports and code relationships are mapped as an interactive circuit board. Flip any file’s switch to trace imported modules and callers in real time.
+            </p>
+          </div>
+          <div className="panel unit" style={{ padding: '28px' }}>
+            <CircuitBoard
+              ref={depsBoardRef}
+              id="g1_full"
+              mode="deps"
+              activeMap={depsActive}
+              onToggleNode={handleToggleDepNode}
+            />
+            <DependencyReadout
+              activeKeys={Object.keys(depsActive).filter((k) => depsActive[k])}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* PAGE 4: Full Failure Analysis */}
+      {activePage === 'failure' && (
+        <div className="full-page">
+          <div className="page-banner">
+            <span className="tag">
+              <span className="led"></span>Failure Analysis
+            </span>
+            <h1>Paste an error. Get a place to start.</h1>
+            <p>
+              Give CodeArchi an error message or log. It finds the files named in the trace, ranks them, and proposes root causes and step-by-step diagnostic actions.
+            </p>
+          </div>
+          <div className="panel unit" style={{ padding: '28px' }}>
+            <PresetSelector
+              activePresetIndex={activePresetIndex}
+              onSelectPreset={handleSelectPreset}
+            />
+            <textarea
+              id="log_full"
+              aria-label="Error log"
+              value={errorLog}
+              rows={6}
+              onChange={(e) => {
+                setErrorLog(e.target.value);
+                handleAnalyzeError(e.target.value);
+              }}
+              style={{ minHeight: '140px' }}
+            />
+            <button
+              type="button"
+              className="key hot"
+              onClick={() => handleAnalyzeError(errorLog)}
+            >
+              Analyze Stack Trace
+            </button>
+            <AnalysisResult result={analysisResult} />
+          </div>
+        </div>
+      )}
+
+      {/* PAGE 5: Full Change Impact Analysis */}
+      {activePage === 'impact' && (
+        <div className="full-page">
+          <div className="page-banner">
+            <span className="tag">
+              <span className="led"></span>Change Impact Analysis
+            </span>
+            <h1>Know what a change can reach.</h1>
+            <p>
+              Flip the switch of a file you plan to edit. CodeArchi traverses the dependency tree with breadth-first search to show what modules will be affected.
+            </p>
+          </div>
+          <div className="panel unit" style={{ padding: '28px' }}>
+            <CircuitBoard
+              ref={impactBoardRef}
+              id="g2_full"
+              mode="impact"
+              activeMap={impactActive}
+              onToggleNode={handleToggleImpactNode}
+            />
+            <ImpactReadout activeMap={impactActive} />
+          </div>
+        </div>
+      )}
+
+      {/* PAGE 6: Full AI Insights */}
+      {activePage === 'insights' && (
+        <div className="full-page">
+          <div className="page-banner">
+            <span className="tag">
+              <span className="led"></span>AI Insights and Test Suggestions
+            </span>
+            <h1>Explanations that show their work.</h1>
+            <p>
+              Every explanation cites the exact code evidence it relied on, declares its confidence percentage, highlights unknowns, and proposes automated test checks.
+            </p>
+          </div>
+          <AiInsights result={analysisResult} />
+        </div>
+      )}
+
+      <Footer />
+    </>
+  );
+}
