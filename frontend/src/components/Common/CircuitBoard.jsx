@@ -1,19 +1,18 @@
-import React, { useRef, useImperativeHandle, forwardRef } from 'react';
-import {
-  PCB_COORDS,
-  EX_COORDS,
-  MX_TRANSFORM,
-  EDGES,
-  getImports,
-  getImportedBy,
-  calculateBfsImpact
-} from '../../data/codebaseData';
+import { useRef, useImperativeHandle, forwardRef } from 'react';
+import { MX_TRANSFORM } from '../../data/codebaseData';
+import { calculateImpact } from '../../data/projectModel';
+import { useProject } from '../../context/projectContext';
 
 const CircuitBoard = forwardRef(function CircuitBoard(
   { id, mode, activeMap, onToggleNode },
   ref
 ) {
+  const project = useProject();
   const svgRef = useRef(null);
+
+  const board = project.board;
+  const coords = board.coords;
+  const boardEdges = board.edges;
 
   // Expose hit testing for trackpad simulation
   useImperativeHandle(ref, () => ({
@@ -27,8 +26,8 @@ const CircuitBoard = forwardRef(function CircuitBoard(
       const fx = (a + b) / 2;
       const fy = (b - a) / 2;
 
-      for (const k in PCB_COORDS) {
-        const [x, y] = PCB_COORDS[k];
+      for (const k in coords) {
+        const [x, y] = coords[k];
         if (fx >= x - 42 && fx <= x + 42 && fy >= y - 22 && fy <= y + 40) {
           return k;
         }
@@ -47,40 +46,40 @@ const CircuitBoard = forwardRef(function CircuitBoard(
 
   if (mode === 'deps') {
     activeKeys.forEach((k) => {
-      getImports(k).forEach((x) => {
+      (project.imports[k] || []).forEach((x) => {
         nodeClasses[x] = nodeClasses[x] || 'out';
       });
-      getImportedBy(k).forEach((x) => {
+      (project.importedBy[k] || []).forEach((x) => {
         nodeClasses[x] = nodeClasses[x] || 'in';
       });
     });
 
-    wireClasses = EDGES.map((e) => {
+    wireClasses = boardEdges.map((e) => {
       if (activeMap[e[0]]) return 'out';
       if (activeMap[e[1]]) return 'in';
       return '';
     });
   } else {
     // Impact mode
-    const { dp, cls } = calculateBfsImpact(activeMap);
-    nodeClasses = cls;
+    const { depth, classes } = calculateImpact(project, activeMap);
+    nodeClasses = classes;
 
-    wireClasses = EDGES.map((e) => {
-      if (dp[e[1]] !== undefined && dp[e[0]] !== undefined) {
+    wireClasses = boardEdges.map((e) => {
+      if (depth[e[1]] !== undefined && depth[e[0]] !== undefined) {
         return 'hit';
       }
       return '';
     });
 
-    Object.keys(PCB_COORDS).forEach((k) => {
-      if (dp[k] && !activeMap[k]) {
-        nodeDelays[k] = dp[k] * 0.3;
+    Object.keys(coords).forEach((k) => {
+      if (depth[k] && !activeMap[k]) {
+        nodeDelays[k] = depth[k] * 0.3;
       }
     });
 
-    wireDelays = EDGES.map((e, i) => {
+    wireDelays = boardEdges.map((e, i) => {
       if (wireClasses[i]) {
-        return (dp[e[1]] || 0) * 0.3;
+        return (depth[e[1]] || 0) * 0.3;
       }
       return 0;
     });
@@ -150,10 +149,10 @@ const CircuitBoard = forwardRef(function CircuitBoard(
             </text>
 
             {/* Wires */}
-            {EDGES.map((e, i) => {
-              const a = PCB_COORDS[e[1]];
-              const b = PCB_COORDS[e[0]];
-              const ex = EX_COORDS[i];
+            {boardEdges.map((e, i) => {
+              const a = coords[e[1]];
+              const b = coords[e[0]];
+              const ex = board.elbows[i];
               const d = `M${a[0] + 42} ${a[1]}H${ex}V${b[1]}H${b[0] - 42}`;
               const wClass = wireClasses[i] || '';
               const delay = wireDelays[i] || 0;
@@ -169,8 +168,8 @@ const CircuitBoard = forwardRef(function CircuitBoard(
             })}
 
             {/* IC Chips */}
-            {Object.keys(PCB_COORDS).map((k) => {
-              const [x, y] = PCB_COORDS[k];
+            {Object.keys(coords).map((k) => {
+              const [x, y] = coords[k];
               const parts = k.split('/');
               const isTurnedOn = !!activeMap[k];
               const nodeClass = isTurnedOn
@@ -198,7 +197,7 @@ const CircuitBoard = forwardRef(function CircuitBoard(
                 >
                   {/* IC Pins */}
                   {[0, 1, 2, 3, 4].map((pIdx) => (
-                    <React.Fragment key={pIdx}>
+                    <g key={pIdx}>
                       <rect
                         className="pin"
                         x={x - 32 + pIdx * 16}
@@ -213,7 +212,7 @@ const CircuitBoard = forwardRef(function CircuitBoard(
                         width="6"
                         height="4"
                       />
-                    </React.Fragment>
+                    </g>
                   ))}
 
                   <rect
@@ -238,7 +237,7 @@ const CircuitBoard = forwardRef(function CircuitBoard(
                     y={y - 5}
                     textAnchor="middle"
                   >
-                    {parts[1]}
+                    {parts.length > 1 ? parts[parts.length - 2] : ''}
                   </text>
                   <text
                     className="nm"
@@ -246,7 +245,7 @@ const CircuitBoard = forwardRef(function CircuitBoard(
                     y={y + 10}
                     textAnchor="middle"
                   >
-                    {parts[2]}
+                    {parts[parts.length - 1]}
                   </text>
                   <circle
                     className="lamp"

@@ -30,12 +30,23 @@ The application features a fully interactive **3D Laptop Studio** with scroll-dr
 ---
 
 ### 2. 📁 Codebase Explorer
+- **Project ZIP Upload**: Drop a ZIP archive of any project on the Explorer page and it is read in the browser (no server, no third party zip library).
+- **Automatic Project Reading**: CodeArchi writes a plain-English summary of what the project does, what stack it uses, where it starts, how big it is and which files matter most.
 - **Directory Tree**: Browse folders and source files with language badges (`TSX · supported`, `TypeScript`, `Not analyzed`).
 - **Syntax Code Viewer**: Inspect code lines with custom line numbering, formatted syntax blocks, and instant `Imports` / `Imported by` reference tags.
 
 ---
 
-### 3. ⚡ Dependency Intelligence
+### 3. 📦 One Upload, Every View
+- **Shared Project Context**: Once a ZIP is loaded, the file tree, the code viewer, the dependency board, the blast radius, the failure analysis and the AI insights all read from that project instead of the built in sample.
+- **Real Import Graph**: Imports are extracted from the uploaded sources (ES modules, CommonJS, Python, Java, Go, Rust, PHP, Ruby) and resolved to real file paths.
+- **Project Aware Failure Analysis**: A pasted stack trace is matched against the uploaded files, so the cited evidence is the actual line from your code.
+- **AI Insights From Your Code**: Architecture, hotspot, risk, test coverage and configuration insights are generated from the upload, each with its own confidence score and cited evidence.
+- **Active Project Chip**: Every full page view shows which project is loaded, with a shortcut back to the Explorer.
+
+---
+
+### 4. ⚡ Dependency Intelligence
 - **Isometric SVG PCB Circuit Board**: Renders files as IC chips mounted on a printed circuit board with grounding planes and animated signal traces.
 - **Interactive IC Switches**: Flip file switches to light up connected dependencies with animated pulsing neon wires:
   - 🟠 **Orange wires**: Files imported by the selected module.
@@ -44,7 +55,7 @@ The application features a fully interactive **3D Laptop Studio** with scroll-dr
 
 ---
 
-### 4. 🔍 Failure Analysis
+### 5. 🔍 Failure Analysis
 - **Trace & Log Parser**: Paste any stack trace or error log to instantly identify relevant files, line numbers, and causes.
 - **Built-in Presets**:
   - `TypeError`: Handles undefined property reads (`total` in `format.ts`).
@@ -54,14 +65,14 @@ The application features a fully interactive **3D Laptop Studio** with scroll-dr
 
 ---
 
-### 5. 💥 Change Impact Analysis
+### 6. 💥 Change Impact Analysis
 - **BFS Blast Radius Visualizer**: Computes a Breadth-First Search over all reverse importers to trace which modules will be affected by a proposed edit.
 - **Staggered Signal Delay**: Visualizes blast propagation with animated wire delays (`--d`).
 - **Impact Summary**: Categorizes direct vs. indirect dependencies and suggests files to retest first.
 
 ---
 
-### 6. 🧠 AI Insights & Test Suggestions
+### 7. 🧠 AI Insights & Test Suggestions
 - **Root Cause Explanation**: Clear, human-readable breakdown of underlying failures.
 - **10-Bar LED Confidence Meter**: Visual confidence score calculated from observable evidence.
 - **Cited Code Evidence**: Highlights exact lines of code behind each hypothesis.
@@ -70,7 +81,7 @@ The application features a fully interactive **3D Laptop Studio** with scroll-dr
 
 ---
 
-### 7. 📌 Fixed Top Navigation Bar
+### 8. 📌 Fixed Top Navigation Bar
 - Pinned to the top of the viewport (`position: fixed`) with a glassmorphism blur backdrop.
 - Allows instant switching between **Home (3D Studio)** and dedicated **Full-Page Views** for Explorer, Dependencies, Failures, Impact, and AI Insights.
 - Never scrolls away or obstructs content.
@@ -93,10 +104,17 @@ CodeArchi/
 │       │
 │       ├── data/
 │       │   ├── codebaseData.js                // Mock files, imports graph, PCB coordinates & BFS impact logic
-│       │   └── failurePresets.js              // Error trace presets, regex patterns & diagnostic data
+│       │   ├── failurePresets.js              // Error trace presets, regex patterns & diagnostic data
+│       │   ├── projectModel.js                 // Normalised project model (files, graph, board layout) & sample project
+│       │   └── projectInsights.js             // Insights generated from an uploaded project
+│       │
+│       ├── context/
+│       │   └── projectContext.js               // React context holding the active project (sample or upload)
 │       │
 │       ├── utils/
-│       │   └── soundEffects.js                // Web Audio API synthesizer for tactile clicks & power tones
+│       │   ├── soundEffects.js                // Web Audio API synthesizer for tactile clicks & power tones
+│       │   ├── zipReader.js                    // Dependency free ZIP reader (central directory + inflate)
+│       │   └── projectAnalyzer.js              // Turns an archive into files, import graph, risks & summary
 │       │
 │       └── components/
 │           ├── Header/
@@ -104,9 +122,12 @@ CodeArchi/
 │           ├── Hero/
 │           │   └── Hero.jsx                   // Hero showcase unit with glowing LCD brand cells
 │           ├── Common/
-│           │   └── CircuitBoard.jsx           // Reusable isometric SVG PCB with interactive IC switches
+│           │   ├── CircuitBoard.jsx           // Reusable isometric SVG PCB with interactive IC switches
+│           │   └── ProjectChip.jsx            // Active project badge shown on every full page view
 │           ├── Explorer/
 │           │   ├── CodeExplorer.jsx           // Codebase explorer layout container
+│           │   ├── UploadPanel.jsx            // ZIP upload button, drag & drop zone & archive status
+│           │   ├── ProjectSummary.jsx         // Written summary of what the loaded project does
 │           │   ├── FileTree.jsx               // Folder directory tree
 │           │   └── CodeViewer.jsx             // Code preview, line numbers & imports tags
 │           ├── Dependency/
@@ -115,6 +136,7 @@ CodeArchi/
 │           ├── FailureAnalysis/
 │           │   ├── FailureAnalysis.jsx        // Failure analyzer section container
 │           │   ├── PresetSelector.jsx         // Preset selector buttons (TypeError, JWT, DB)
+│           │   ├── ProjectRisks.jsx           // Risky spots found in the uploaded code
 │           │   └── AnalysisResult.jsx         // Ranked files, causes & investigation steps
 │           ├── ImpactAnalysis/
 │           │   ├── ImpactAnalysis.jsx         // Change impact section container

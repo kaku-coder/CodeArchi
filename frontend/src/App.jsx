@@ -1,8 +1,12 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import Header from './components/Header/Header';
 import LaptopScene from './components/Laptop/LaptopScene';
 import FileTree from './components/Explorer/FileTree';
 import CodeViewer from './components/Explorer/CodeViewer';
+import UploadPanel from './components/Explorer/UploadPanel';
+import ProjectSummary from './components/Explorer/ProjectSummary';
+import ProjectChip from './components/Common/ProjectChip';
+import ProjectRisks from './components/FailureAnalysis/ProjectRisks';
 import CircuitBoard from './components/Common/CircuitBoard';
 import DependencyReadout from './components/Dependency/DependencyReadout';
 import ImpactReadout from './components/ImpactAnalysis/ImpactReadout';
@@ -10,11 +14,16 @@ import PresetSelector from './components/FailureAnalysis/PresetSelector';
 import AnalysisResult from './components/FailureAnalysis/AnalysisResult';
 import AiInsights from './components/AiInsights/AiInsights';
 import Footer from './components/Footer/Footer';
-import { FAILURE_PRESETS, analyzeErrorLog } from './data/failurePresets';
+import { FAILURE_PRESETS, analyzeErrorLog, buildExampleTrace } from './data/failurePresets';
+import { SAMPLE_PROJECT } from './data/projectModel';
+import { ProjectContext } from './context/projectContext';
 
 export default function App() {
   const [activePage, setActivePage] = useState('home');
   const [currentSlide, setCurrentSlide] = useState(-1);
+
+  // Active project: the built in sample, or the uploaded archive
+  const [project, setProject] = useState(SAMPLE_PROJECT);
 
   // Explorer State
   const [selectedFile, setSelectedFile] = useState('src/utils/format.ts');
@@ -52,17 +61,20 @@ export default function App() {
     }));
   }, []);
 
-  const handleSelectPreset = useCallback((idx) => {
-    const preset = FAILURE_PRESETS[idx];
-    setErrorLog(preset.log);
-    setActivePresetIndex(idx);
-    setAnalysisResult(preset);
-  }, []);
+  const handleSelectPreset = useCallback(
+    (idx) => {
+      const preset = FAILURE_PRESETS[idx];
+      setErrorLog(preset.log);
+      setActivePresetIndex(idx);
+      setAnalysisResult(analyzeErrorLog(preset.log, project));
+    },
+    [project]
+  );
 
   const handleAnalyzeError = useCallback(
     (customText) => {
       const textToAnalyze = customText !== undefined ? customText : errorLog;
-      const result = analyzeErrorLog(textToAnalyze);
+      const result = analyzeErrorLog(textToAnalyze, project);
       setAnalysisResult(result);
       if (result) {
         const idx = FAILURE_PRESETS.findIndex((p) => p.n === result.n);
@@ -71,16 +83,60 @@ export default function App() {
         setActivePresetIndex(null);
       }
     },
-    [errorLog]
+    [errorLog, project]
   );
+
+  const handleUseRisk = useCallback(
+    (risk) => {
+      const trace = 'Error: ' + risk.kind + '\n    at ' + risk.path + ':' + risk.line;
+      setErrorLog(trace);
+      setAnalysisResult(analyzeErrorLog(trace, project));
+      setActivePresetIndex(null);
+    },
+    [project]
+  );
+
+  const handleProjectLoaded = useCallback((next) => {
+    setProject(next);
+
+    const firstFile = next.fileEntries.find((entry) => !entry.off);
+    setSelectedFile(firstFile ? firstFile.path : null);
+
+    const boardStart = Object.keys(next.board.coords)[0];
+    setDepsActive(boardStart ? { [boardStart]: true } : {});
+    setImpactActive(boardStart ? { [boardStart]: true } : {});
+
+    const trace = buildExampleTrace(next);
+    if (trace) {
+      setErrorLog(trace);
+      setAnalysisResult(analyzeErrorLog(trace, next));
+      setActivePresetIndex(null);
+    } else {
+      setErrorLog('');
+      setAnalysisResult(null);
+      setActivePresetIndex(null);
+    }
+  }, []);
+
+  const handleResetProject = useCallback(() => {
+    setProject(SAMPLE_PROJECT);
+    setSelectedFile('src/utils/format.ts');
+    setDepsActive({ 'src/billing/invoice.ts': true });
+    setImpactActive({ 'src/db/client.ts': true });
+    setErrorLog(FAILURE_PRESETS[0].log);
+    setActivePresetIndex(0);
+    setAnalysisResult(FAILURE_PRESETS[0]);
+  }, []);
 
   const handleSelectPage = (pageId) => {
     setActivePage(pageId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const goToExplorer = () => handleSelectPage('explorer');
+
   return (
-    <>
+    <ProjectContext.Provider value={project}>
       {/* Real Fixed Navbar - never scrolls away */}
       <Header
         activePage={activePage}
@@ -125,7 +181,17 @@ export default function App() {
               Upload a ZIP or connect a supported repository. CodeArchi lists every file and folder, marks which ones it can read, and lets you view the content in high resolution.
             </p>
           </div>
+
           <div className="panel unit" style={{ padding: '24px' }}>
+            <UploadPanel onProjectLoaded={handleProjectLoaded} />
+            <ProjectSummary
+              project={project}
+              onNavigate={handleSelectPage}
+              onReset={handleResetProject}
+            />
+          </div>
+
+          <div className="panel unit" style={{ padding: '24px', marginTop: '24px' }}>
             <div
               className="explorer"
               style={{
@@ -154,6 +220,7 @@ export default function App() {
             <p>
               Imports and code relationships are mapped as an interactive circuit board. Flip any file’s switch to trace imported modules and callers in real time.
             </p>
+            <ProjectChip project={project} onChange={goToExplorer} />
           </div>
           <div className="panel unit" style={{ padding: '28px' }}>
             <CircuitBoard
@@ -181,6 +248,7 @@ export default function App() {
             <p>
               Give CodeArchi an error message or log. It finds the files named in the trace, ranks them, and proposes root causes and step-by-step diagnostic actions.
             </p>
+            <ProjectChip project={project} onChange={goToExplorer} />
           </div>
           <div className="panel unit" style={{ padding: '28px' }}>
             <PresetSelector
@@ -206,6 +274,7 @@ export default function App() {
               Analyze Stack Trace
             </button>
             <AnalysisResult result={analysisResult} />
+            <ProjectRisks project={project} onUse={handleUseRisk} />
           </div>
         </div>
       )}
@@ -221,6 +290,7 @@ export default function App() {
             <p>
               Flip the switch of a file you plan to edit. CodeArchi traverses the dependency tree with breadth-first search to show what modules will be affected.
             </p>
+            <ProjectChip project={project} onChange={goToExplorer} />
           </div>
           <div className="panel unit" style={{ padding: '28px' }}>
             <CircuitBoard
@@ -246,12 +316,13 @@ export default function App() {
             <p>
               Every explanation cites the exact code evidence it relied on, declares its confidence percentage, highlights unknowns, and proposes automated test checks.
             </p>
+            <ProjectChip project={project} onChange={goToExplorer} />
           </div>
-          <AiInsights result={analysisResult} />
+          <AiInsights result={analysisResult} project={project} />
         </div>
       )}
 
       <Footer />
-    </>
+    </ProjectContext.Provider>
   );
 }

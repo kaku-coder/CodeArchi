@@ -1,38 +1,51 @@
-import React from 'react';
-import { ALL_FILES, OFF_FILES } from '../../data/codebaseData';
+import { Fragment } from 'react';
+import { useProject } from '../../context/projectContext';
+
+function groupByDirectory(entries) {
+  const groups = [];
+
+  entries.forEach((entry) => {
+    const slashIdx = entry.path.lastIndexOf('/');
+    const dir = slashIdx > 0 ? entry.path.slice(0, slashIdx + 1) : '/';
+    const last = groups[groups.length - 1];
+
+    if (last && last.dir === dir) {
+      groups[groups.length - 1] = { dir, items: last.items.concat(entry) };
+    } else {
+      groups.push({ dir, items: [entry] });
+    }
+  });
+
+  return groups;
+}
 
 export default function FileTree({ selectedFile, onSelectFile }) {
-  let lastDir = '';
+  const project = useProject();
 
   return (
     <div className="tree" role="list">
-      {ALL_FILES.map((p) => {
-        const slashIdx = p.lastIndexOf('/');
-        const dir = slashIdx > 0 ? p.slice(0, slashIdx + 1) : '/';
-        const showDirHeader = dir !== lastDir;
-        if (showDirHeader) {
-          lastDir = dir;
-        }
+      {groupByDirectory(project.fileEntries).map((group) => (
+        <Fragment key={group.dir}>
+          <div className="dir">{group.dir}</div>
+          {group.items.map((entry) => {
+            const isCurrent = entry.path === selectedFile;
+            const fileName = entry.path.split('/').pop();
 
-        const isOff = !!OFF_FILES[p];
-        const isCurrent = p === selectedFile;
-        const fileName = p.split('/').pop();
-
-        return (
-          <React.Fragment key={p}>
-            {showDirHeader && <div className="dir">{dir}</div>}
-            <button
-              type="button"
-              className={`file ${isOff ? 'off' : ''}`}
-              data-p={p}
-              aria-current={isCurrent}
-              onClick={() => onSelectFile(p)}
-            >
-              {fileName}
-            </button>
-          </React.Fragment>
-        );
-      })}
+            return (
+              <button
+                key={entry.path}
+                type="button"
+                className={`file ${entry.off ? 'off' : ''}`}
+                data-p={entry.path}
+                aria-current={isCurrent}
+                onClick={() => onSelectFile(entry.path)}
+              >
+                {fileName}
+              </button>
+            );
+          })}
+        </Fragment>
+      ))}
     </div>
   );
 }

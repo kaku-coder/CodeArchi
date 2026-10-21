@@ -1,5 +1,5 @@
-import React from 'react';
-import { getImports, getImportedBy, shortPath } from '../../data/codebaseData';
+import { useProject } from '../../context/projectContext';
+import { importsOf, importedByOf, shortPath } from '../../data/projectModel';
 
 function renderChips(arr, customClass) {
   if (!arr.length) {
@@ -17,6 +17,8 @@ function renderChips(arr, customClass) {
 }
 
 export default function DependencyReadout({ activeKeys }) {
+  const project = useProject();
+
   if (!activeKeys.length) {
     return (
       <div className="readout" aria-live="polite">
@@ -30,9 +32,9 @@ export default function DependencyReadout({ activeKeys }) {
       {activeKeys.map((k) => (
         <div key={k} style={{ marginBottom: '6px' }}>
           <b>{k}</b> imports:
-          {renderChips(getImports(k), 'd')}
+          {renderChips(importsOf(project, k), 'd')}
           Imported by:
-          {renderChips(getImportedBy(k))}
+          {renderChips(importedByOf(project, k))}
         </div>
       ))}
     </div>

@@ -1,8 +1,14 @@
-import React from 'react';
-import { FILES_CONTENT, OFF_FILES, getImports, getImportedBy, shortPath } from '../../data/codebaseData';
+import { useProject } from '../../context/projectContext';
+import { importsOf, importedByOf, shortPath, isCodeLanguage } from '../../data/projectModel';
 
 export default function CodeViewer({ selectedFile }) {
-  if (OFF_FILES[selectedFile]) {
+  const project = useProject();
+
+  const offEntry = project.fileEntries.find(
+    (entry) => entry.path === selectedFile && entry.off
+  );
+
+  if (offEntry) {
     return (
       <div id="viewer">
         <div className="meta">
@@ -10,35 +16,38 @@ export default function CodeViewer({ selectedFile }) {
           <span className="badge no">Not analyzed</span>
         </div>
         <p style={{ color: 'var(--mute)', margin: 0 }}>
-          {OFF_FILES[selectedFile]} files are listed but not read for code relationships.
+          {offEntry.note} files are listed but not read for code relationships.
         </p>
       </div>
     );
   }
 
-  const fileData = FILES_CONTENT[selectedFile];
-  if (!fileData) {
+  const file = project.byPath[selectedFile];
+  if (!file) {
     return <div id="viewer">Select a file</div>;
   }
 
-  const [startLine, lines] = fileData;
-  const isTsx = selectedFile.slice(-3) === 'tsx';
-  const langLabel = /tsx?$/.test(selectedFile) ? (isTsx ? 'TSX' : 'TypeScript') : '';
+  const lines = file.lines || [];
+  const langLabel = file.lang || 'Text';
+  const isCode = isCodeLanguage(langLabel);
 
-  const importsList = getImports(selectedFile).map(shortPath);
-  const importedByList = getImportedBy(selectedFile).map(shortPath);
+  const importsList = importsOf(project, selectedFile).map(shortPath);
+  const importedByList = importedByOf(project, selectedFile).map(shortPath);
 
   return (
     <div id="viewer">
       <div className="meta">
         <b>{selectedFile}</b>
-        <span className="badge">{langLabel} · supported</span>
+        <span className={isCode ? 'badge' : 'badge no'}>
+          {langLabel} · {isCode ? 'supported' : 'listed'}
+        </span>
         <span>{lines.length} lines shown</span>
+        <span>{file.size} bytes</span>
       </div>
       <pre>
         {lines.map((line, idx) => (
           <div key={idx}>
-            <span className="ln">{startLine + idx}</span>
+            <span className="ln">{idx + 1}</span>
             {line}
           </div>
         ))}

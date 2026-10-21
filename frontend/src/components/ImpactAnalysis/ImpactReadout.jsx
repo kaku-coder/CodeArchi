@@ -1,8 +1,9 @@
-import React from 'react';
-import { shortPath, calculateBfsImpact } from '../../data/codebaseData';
+import { useProject } from '../../context/projectContext';
+import { shortPath, calculateImpact } from '../../data/projectModel';
 
 export default function ImpactReadout({ activeMap }) {
-  const { dp, par, affectedList, activeKeys } = calculateBfsImpact(activeMap);
+  const project = useProject();
+  const { affectedList, activeKeys } = calculateImpact(project, activeMap);
 
   if (!activeKeys.length) {
     return (

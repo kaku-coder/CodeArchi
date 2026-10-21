@@ -1,5 +1,22 @@
+import { buildProjectInsights } from '../../data/projectInsights';
 
-export default function AiInsights({ result, isSlide = false }) {
+function ConfidenceMeter({ value, label }) {
+  return (
+    <>
+      <h3>Confidence</h3>
+      <div className="meter" aria-hidden="true">
+        {[...Array(10)].map((_, i) => (
+          <i key={i} className={i < value ? 'on' : ''} />
+        ))}
+      </div>
+      <span className="cap">{label}</span>
+    </>
+  );
+}
+
+export default function AiInsights({ result, project, isSlide = false }) {
+  const insights = buildProjectInsights(project);
+
   const content = (
     <>
       <div>
@@ -8,7 +25,8 @@ export default function AiInsights({ result, isSlide = false }) {
         </span>
         <h2>Explanations that show their work.</h2>
         <p>
-          For the error analyzed above, the insight below cites the code it relied on, states how confident it is, and says what it could not see.
+          For the error analyzed above, the insight below cites the code it relied on, states how
+          confident it is, and says what it could not see.
         </p>
         <ul>
           <li>Evidence: the exact lines behind each claim.</li>
@@ -20,21 +38,18 @@ export default function AiInsights({ result, isSlide = false }) {
         <div className="res">
           {!result ? (
             <p style={{ color: 'var(--mute)' }}>
-              No known file path or error type found. Paste a trace that includes paths, such as src/utils/format.ts:12.
+              No known file path or error type found. Paste a trace that includes paths, such as
+              src/utils/format.ts:12.
             </p>
           ) : (
             <>
+              <h3>Failure analysis</h3>
               <p style={{ margin: 0, color: 'var(--ink)' }}>{result.why}</p>
 
-              <h3>Confidence</h3>
-              <div className="meter" aria-hidden="true">
-                {[...Array(10)].map((_, i) => (
-                  <i key={i} className={i < result.conf ? 'on' : ''} />
-                ))}
-              </div>
-              <span className="cap">
-                {result.conf * 10} percent, based on the visible code and log
-              </span>
+              <ConfidenceMeter
+                value={result.conf}
+                label={`${result.conf * 10} percent, based on the visible code and log`}
+              />
 
               <h3>Evidence</h3>
               {result.ev.map(([file, line, codeSnippet], idx) => (
@@ -58,6 +73,47 @@ export default function AiInsights({ result, isSlide = false }) {
               </ul>
             </>
           )}
+
+          {insights.map((insight) => (
+            <div key={insight.id} className="insight">
+              <h3>{insight.title}</h3>
+              <p style={{ margin: 0, color: 'var(--ink)' }}>{insight.why}</p>
+
+              <ConfidenceMeter
+                value={insight.conf}
+                label={`${insight.conf * 10} percent, based on the uploaded code`}
+              />
+
+              {insight.ev.length > 0 && (
+                <>
+                  <h3>Evidence</h3>
+                  {insight.ev.map(([file, line, codeSnippet], idx) => (
+                    <div key={idx} className="ev">
+                      <code>
+                        {file}:{line}
+                      </code>
+                      <q>{codeSnippet}</q>
+                    </div>
+                  ))}
+                </>
+              )}
+
+              <div className="warn">
+                <b>What we cannot see.</b> {insight.unk}
+              </div>
+
+              {insight.tests.length > 0 && (
+                <>
+                  <h3>Suggested tests</h3>
+                  <ul>
+                    {insight.tests.map((test, idx) => (
+                      <li key={idx}>{test}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
+          ))}
         </div>
       </div>
     </>
