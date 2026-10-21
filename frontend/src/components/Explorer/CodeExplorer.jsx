@@ -52,7 +52,11 @@ export default function CodeExplorer({ selectedFile, onSelectFile, isSlide = fal
   );
 
   if (isSlide) {
-    return <div className="feat">{content}</div>;
+    return (
+      <div className={`feat ${viewMode === 'org' ? 'feat-wide-tree' : ''}`}>
+        {content}
+      </div>
+    );
   }
 
   return (

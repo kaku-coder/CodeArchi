@@ -251,20 +251,20 @@ export default function App() {
             <ProjectChip project={project} onChange={goToExplorer} />
           </div>
           <div className="panel unit" style={{ padding: '24px' }}>
-            <div className="deps-tabs">
+            <div className="deps-tabs" style={{ marginBottom: '20px' }}>
               <button
                 type="button"
                 className={`key ${depsView === 'tree' ? 'hot' : ''}`}
                 onClick={() => setDepsView('tree')}
               >
-                Tree View
+                ⚡ Blueprint Node Graph
               </button>
               <button
                 type="button"
                 className={`key ${depsView === 'board' ? 'hot' : ''}`}
                 onClick={() => setDepsView('board')}
               >
-                Circuit Board
+                🔌 Circuit Board
               </button>
             </div>
 

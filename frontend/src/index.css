@@ -425,7 +425,7 @@ svg {
 }
 
 .pcbw.is2d .pcb {
-  max-height: 300px;
+  max-height: 360px;
 }
 
 .wire.flat {
@@ -1910,35 +1910,137 @@ footer {
   box-shadow: 0 0 14px rgba(255, 154, 74, 0.45);
 }
 
+/* Full width layout for tree view inside laptop slide */
+.feat.feat-wide-tree {
+  display: flex !important;
+  flex-direction: column !important;
+  grid-template-columns: none !important;
+  gap: 14px !important;
+  padding: 14px 18px !important;
+  width: 100% !important;
+}
+
+.feat.feat-wide-tree .explorer-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.feat.feat-wide-tree .panel.unit {
+  width: 100%;
+}
+
 .org-tree-workspace {
   position: relative;
   width: 100%;
   background: radial-gradient(circle at 50% 5%, #181922 0%, #0c0d11 100%);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 18px;
-  padding: 30px 20px 36px;
+  border-radius: 16px;
+  padding: 20px 16px 28px;
   box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.7);
-  min-height: 580px;
+  min-height: 520px;
 }
 
-/* Floating "Visualization Rules" Card (Top Right - Matches Reference Screenshot) */
-.vis-controls-card {
-  position: absolute;
-  top: 18px;
-  right: 18px;
-  z-index: 30;
-  width: 240px;
-  background: rgba(25, 26, 35, 0.94);
+/* Top Control Bar in Org Tree */
+.org-top-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 4px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.org-toolbar-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.org-tree-title {
+  font: 700 0.86rem 'Chakra Petch', sans-serif;
+  color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tree-led {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #c084fc;
+  box-shadow: 0 0 8px #c084fc;
+}
+
+.org-toolbar-stats {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+
+/* Dropdown Container for Visualization Rules */
+.vis-dropdown-container {
+  position: relative;
+  z-index: 60;
+}
+
+.vis-trigger-btn {
+  background: rgba(168, 85, 247, 0.12);
   border: 1px solid rgba(168, 85, 247, 0.35);
+  color: #c084fc;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font: 600 0.76rem 'Chakra Petch', sans-serif;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vis-trigger-btn:hover,
+.vis-trigger-btn.active {
+  background: rgba(168, 85, 247, 0.26);
+  border-color: #a855f7;
+  color: #fff;
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.3);
+}
+
+/* Visualization Rules Dropdown Card (Anchored to top-right button, never covers root card!) */
+.vis-controls-card.open {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 70;
+  width: 230px;
+  background: rgba(24, 25, 33, 0.96);
+  border: 1px solid rgba(168, 85, 247, 0.4);
   border-radius: 12px;
   backdrop-filter: blur(16px);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), 0 0 20px rgba(168, 85, 247, 0.12);
-  transition: all 0.25s ease;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.75), 0 0 20px rgba(168, 85, 247, 0.15);
+  animation: fadeInDown 0.18s ease;
   overflow: hidden;
 }
 
-.vis-controls-card.minimized {
-  width: auto;
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .vis-controls-header {
@@ -1948,12 +2050,10 @@ footer {
   padding: 10px 14px;
   background: rgba(255, 255, 255, 0.03);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  cursor: pointer;
-  user-select: none;
 }
 
 .vis-controls-title {
-  font: 700 0.82rem 'Chakra Petch', sans-serif;
+  font: 700 0.8rem 'Chakra Petch', sans-serif;
   letter-spacing: 0.04em;
   color: #e2e8f0;
 }
@@ -1987,7 +2087,7 @@ footer {
 }
 
 .vis-group-label {
-  font: 700 0.72rem 'Chakra Petch', sans-serif;
+  font: 700 0.7rem 'Chakra Petch', sans-serif;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -1996,7 +2096,7 @@ footer {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   color: #cbd5e1;
   cursor: pointer;
 }
@@ -2008,11 +2108,11 @@ footer {
   height: 14px;
 }
 
-/* Horizontal Scroll Container */
+/* Horizontal Scroll Container - with safe centering */
 .org-tree-scroll-container {
   width: 100%;
   overflow-x: auto;
-  padding: 10px 10px 30px;
+  padding: 8px 6px 26px;
   scrollbar-width: thin;
   scrollbar-color: #a855f7 rgba(0, 0, 0, 0.3);
 }
@@ -2021,8 +2121,10 @@ footer {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 900px;
+  width: max-content;
+  min-width: 100%;
   margin: 0 auto;
+  justify-content: safe center;
 }
 
 /* LEVEL 1: Root Project Node */
@@ -2035,24 +2137,24 @@ footer {
 .org-node-card {
   background: linear-gradient(180deg, #1f212d 0%, #151620 100%);
   border: 1.5px solid rgba(255, 255, 255, 0.12);
-  border-radius: 14px;
-  padding: 14px 16px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
   transition: all 0.22s ease;
 }
 
 .org-node-card.root-card {
-  width: 320px;
+  width: 280px;
   background: linear-gradient(180deg, #242238 0%, #171626 100%);
-  border-color: rgba(168, 85, 247, 0.4);
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5), 0 0 20px rgba(168, 85, 247, 0.18);
+  border-color: rgba(168, 85, 247, 0.45);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.5), 0 0 18px rgba(168, 85, 247, 0.18);
 }
 
 .org-node-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .org-node-title-group {
@@ -2062,19 +2164,19 @@ footer {
 
 .root-pill-badge {
   display: inline-block;
-  font: 700 0.6rem 'Chakra Petch', sans-serif;
+  font: 700 0.58rem 'Chakra Petch', sans-serif;
   letter-spacing: 0.12em;
   color: #c084fc;
   background: rgba(192, 132, 252, 0.12);
   border: 1px solid rgba(192, 132, 252, 0.3);
   border-radius: 4px;
   padding: 1px 6px;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
 
 .org-node-title {
   margin: 0;
-  font-size: 1rem;
+  font-size: 0.94rem;
   font-weight: 700;
   color: #f8fafc;
   font-family: 'Chakra Petch', sans-serif;
@@ -2086,8 +2188,8 @@ footer {
 /* Mini Donut Chart Gauge */
 .mini-donut-wrap {
   position: relative;
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2096,7 +2198,7 @@ footer {
 
 .mini-donut-val {
   position: absolute;
-  font: 700 0.62rem 'Chakra Petch', sans-serif;
+  font: 700 0.58rem 'Chakra Petch', sans-serif;
   color: #c084fc;
 }
 
@@ -2104,9 +2206,9 @@ footer {
 .card-metrics-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
-  margin-top: 10px;
-  padding-top: 10px;
+  gap: 5px;
+  margin-top: 9px;
+  padding-top: 9px;
   border-top: 1px dashed rgba(255, 255, 255, 0.1);
 }
 
@@ -2114,20 +2216,20 @@ footer {
   background: rgba(255, 255, 255, 0.035);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 6px;
-  padding: 5px 3px;
+  padding: 4px 2px;
   text-align: center;
 }
 
 .metric-cell .m-label {
   display: block;
-  font: 700 0.56rem 'Chakra Petch', sans-serif;
+  font: 700 0.54rem 'Chakra Petch', sans-serif;
   letter-spacing: 0.06em;
   color: #94a3b8;
 }
 
 .metric-cell .m-val {
   display: block;
-  font: 700 0.8rem ui-monospace, Menlo, monospace;
+  font: 700 0.76rem ui-monospace, Menlo, monospace;
   color: #f1f5f9;
   margin-top: 1px;
 }
@@ -2135,27 +2237,22 @@ footer {
 /* Tree Orthogonal Connectors */
 .tree-stem-vertical {
   width: 2px;
-  height: 32px;
-  background: rgba(168, 85, 247, 0.45);
-  box-shadow: 0 0 8px rgba(168, 85, 247, 0.35);
+  height: 26px;
+  background: rgba(168, 85, 247, 0.5);
+  box-shadow: 0 0 6px rgba(168, 85, 247, 0.35);
   margin: 0 auto;
 }
 
-.tree-branch-bus {
-  height: 2px;
-  background: rgba(168, 85, 247, 0.45);
-  box-shadow: 0 0 8px rgba(168, 85, 247, 0.35);
-  width: 86%;
-  margin: 0 auto;
-}
-
-/* LEVEL 2: Branches */
+/* LEVEL 2: Directory Subsystem Branches (Pixel-Perfect Orthogonal CSS Rails) */
 .org-level-branches {
   display: flex;
-  gap: 20px;
-  justify-content: center;
+  gap: 14px;
+  justify-content: safe center;
   align-items: flex-start;
-  width: 100%;
+  width: max-content;
+  margin: 0 auto;
+  position: relative;
+  padding-top: 24px;
 }
 
 .org-branch-column {
@@ -2163,16 +2260,48 @@ footer {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 230px;
-  max-width: 270px;
-  flex: 1 1 240px;
+  min-width: 205px;
+  max-width: 235px;
+  flex: 1 1 210px;
 }
 
-.tree-drop-line {
-  width: 2px;
-  height: 28px;
-  background: rgba(168, 85, 247, 0.45);
+/* Horizontal line meeting siblings */
+.org-branch-column::before {
+  content: '';
+  position: absolute;
+  top: -24px;
+  height: 2px;
+  background: rgba(168, 85, 247, 0.5);
   box-shadow: 0 0 6px rgba(168, 85, 247, 0.3);
+  left: 0;
+  right: 0;
+}
+
+.org-branch-column:first-child::before {
+  left: 50%;
+  right: 0;
+}
+
+.org-branch-column:last-child::before {
+  left: 0;
+  right: 50%;
+}
+
+.org-branch-column:only-child::before {
+  display: none;
+}
+
+/* Vertical drop stem into each card */
+.org-branch-column::after {
+  content: '';
+  position: absolute;
+  top: -24px;
+  width: 2px;
+  height: 24px;
+  background: rgba(168, 85, 247, 0.5);
+  box-shadow: 0 0 6px rgba(168, 85, 247, 0.3);
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .dir-card {
@@ -2185,26 +2314,26 @@ footer {
 }
 
 .dir-folder-icon {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   margin-right: 4px;
 }
 
 /* File Members Stack (Org Chart Employees List) */
 .dir-file-members {
-  margin-top: 12px;
+  margin-top: 10px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding-top: 10px;
+  gap: 5px;
+  padding-top: 9px;
   border-top: 1px dashed rgba(255, 255, 255, 0.08);
 }
 
 .leaf-file-card {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 7px 10px;
-  border-radius: 8px;
+  gap: 8px;
+  padding: 6px 9px;
+  border-radius: 7px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.07);
   cursor: pointer;
@@ -2230,16 +2359,16 @@ footer {
 }
 
 .file-avatar-badge {
-  width: 28px;
-  height: 28px;
+  width: 25px;
+  height: 25px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font: 700 0.62rem 'Chakra Petch', sans-serif;
+  font: 700 0.6rem 'Chakra Petch', sans-serif;
   letter-spacing: -0.02em;
   flex-shrink: 0;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
 .file-info-col {
@@ -2248,7 +2377,7 @@ footer {
 }
 
 .file-card-name {
-  font: 600 0.78rem ui-monospace, Menlo, monospace;
+  font: 600 0.74rem ui-monospace, Menlo, monospace;
   color: #f1f5f9;
   white-space: nowrap;
   overflow: hidden;
@@ -2256,18 +2385,18 @@ footer {
 }
 
 .file-card-role {
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   color: #94a3b8;
   margin-top: 1px;
 }
 
 .leaf-check-pill {
-  font: 700 0.6rem 'Chakra Petch', sans-serif;
+  font: 700 0.58rem 'Chakra Petch', sans-serif;
   color: #22c55e;
   background: rgba(34, 197, 94, 0.14);
   border: 1px solid rgba(34, 197, 94, 0.3);
   border-radius: 4px;
-  padding: 1px 5px;
+  padding: 1px 4px;
 }
 
 /* Code Inspector Dock */
@@ -2320,4 +2449,326 @@ footer {
 
 .dock-viewer-wrap {
   width: 100%;
+}
+
+/* ========================================================
+   UNREAL ENGINE BLUEPRINT NODE GRAPH STYLES (Image 1 match)
+   ======================================================== */
+.dtree-view-switcher {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.bp-workspace-container {
+  position: relative;
+  width: 100%;
+  background: #111216;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
+}
+
+.bp-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: rgba(22, 23, 30, 0.96);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.bp-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bp-toolbar-logo {
+  font: 700 0.88rem 'Chakra Petch', sans-serif;
+  color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bp-sparkle {
+  color: #fbbf24;
+  font-size: 1rem;
+}
+
+.bp-badge {
+  font: 700 0.58rem 'Chakra Petch', sans-serif;
+  letter-spacing: 0.12em;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+.bp-toolbar-legend {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 0.74rem;
+  color: #94a3b8;
+}
+
+.bp-leg-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bp-leg-line {
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+.bp-toolbar-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bp-tool-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.bp-tool-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.bp-btn-reset {
+  font-size: 0.75rem;
+  padding: 5px 12px;
+}
+
+.bp-zoom-label {
+  font: 600 0.78rem ui-monospace, Menlo, monospace;
+  color: #94a3b8;
+  min-width: 42px;
+  text-align: center;
+}
+
+/* Blueprint Canvas with Iconic Dark Grid Pattern */
+.bp-canvas-area {
+  position: relative;
+  width: 100%;
+  height: 620px;
+  overflow: hidden;
+  background-color: #121318;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 20px 20px, 20px 20px, 100px 100px, 100px 100px;
+}
+
+.bp-graph-plane {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3600px;
+  height: 2400px;
+}
+
+.bp-splines-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+@keyframes bpFlow {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+.bp-wire-flowing {
+  stroke-dasharray: 8 6;
+  animation: bpFlow 0.8s linear infinite;
+}
+
+/* Blueprint Nodes Layer */
+.bp-nodes-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+}
+
+.bp-node-card {
+  position: absolute;
+  background: rgba(24, 25, 33, 0.95);
+  border: 1.5px solid rgba(255, 255, 255, 0.16);
+  border-radius: 9px;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  user-select: none;
+  transition: box-shadow 0.18s ease, border-color 0.18s ease;
+  overflow: hidden;
+}
+
+.bp-node-card:hover {
+  border-color: rgba(255, 255, 255, 0.38);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.88);
+}
+
+.bp-node-card.active-node {
+  border-color: #fbbf24;
+  box-shadow: 0 0 24px rgba(251, 191, 36, 0.5), 0 16px 40px rgba(0, 0, 0, 0.9);
+}
+
+.bp-node-header {
+  padding: 8px 12px;
+  cursor: grab;
+}
+
+.bp-node-header:active {
+  cursor: grabbing;
+}
+
+.bp-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.bp-node-icon {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.bp-header-title {
+  flex: 1;
+  font: 700 0.84rem 'Chakra Petch', sans-serif;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.bp-badge-pill {
+  font: 700 0.55rem 'Chakra Petch', sans-serif;
+  letter-spacing: 0.08em;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 4px;
+  padding: 2px 5px;
+}
+
+.bp-header-sub {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.75);
+  margin-top: 2px;
+  font-family: ui-monospace, Menlo, monospace;
+}
+
+.bp-node-body {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 12px 12px;
+  gap: 12px;
+}
+
+.bp-pins-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bp-pin-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bp-row-right {
+  justify-content: flex-end;
+}
+
+.bp-pin-name {
+  font: 600 0.7rem ui-monospace, Menlo, monospace;
+  color: #cbd5e1;
+}
+
+.bp-pin-exec {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bp-exec-shape {
+  font-size: 0.85rem;
+  line-height: 1;
+  color: #fff;
+}
+
+.bp-pin-dot {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.bp-dot-cyan {
+  color: #38bdf8;
+  filter: drop-shadow(0 0 4px #38bdf8);
+}
+
+.bp-dot-pink {
+  color: #ec4899;
+  filter: drop-shadow(0 0 4px #ec4899);
+}
+
+.bp-pin-subtext {
+  font-size: 0.62rem;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.bp-subtext-right {
+  text-align: right;
+}
+
+.bp-active-strip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(251, 191, 36, 0.15);
+  border-top: 1px solid rgba(251, 191, 36, 0.3);
+  font: 700 0.58rem 'Chakra Petch', sans-serif;
+  letter-spacing: 0.08em;
+  color: #fbbf24;
+}
+
+.bp-active-led {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fbbf24;
+  box-shadow: 0 0 6px #fbbf24;
 }
