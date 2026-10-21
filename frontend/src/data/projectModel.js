@@ -238,10 +238,10 @@ export function buildProject(config) {
 }
 
 const BOARD_NODES_MAX = 12;
-const BOARD_MIN_X = 55;
-const BOARD_MAX_X = 415;
-const BOARD_MIN_Y = 30;
-const BOARD_MAX_Y = 245;
+const BOARD_MIN_X = 62;
+const BOARD_MAX_X = 418;
+const BOARD_MIN_Y = 46;
+const BOARD_MAX_Y = 228;
 
 function selectBoardEdges(edges) {
   const degree = {};

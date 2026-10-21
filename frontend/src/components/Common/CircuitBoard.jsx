@@ -3,7 +3,7 @@ import { MX_TRANSFORM } from '../../data/codebaseData';
 import { calculateImpact } from '../../data/projectModel';
 import { useProject } from '../../context/projectContext';
 
-function formatChipName(name, maxChars = 13) {
+function formatChipName(name, maxChars = 20) {
   if (!name) return '';
   if (name.length <= maxChars) return name;
   const dotIdx = name.lastIndexOf('.');
@@ -11,8 +11,8 @@ function formatChipName(name, maxChars = 13) {
     const ext = name.slice(dotIdx);
     const base = name.slice(0, dotIdx);
     const rem = maxChars - ext.length - 2; // 2 for '..'
-    if (rem >= 4) {
-      const front = Math.ceil(rem * 0.52);
+    if (rem >= 6) {
+      const front = Math.ceil(rem * 0.58);
       const back = rem - front;
       return base.slice(0, front) + '..' + base.slice(-back) + ext;
     }
@@ -20,11 +20,11 @@ function formatChipName(name, maxChars = 13) {
   return name.slice(0, maxChars - 1) + '…';
 }
 
-function formatChipDir(dir, maxChars = 10) {
+function formatChipDir(dir, maxChars = 16) {
   if (!dir) return '';
   const d = dir.endsWith('/') ? dir : dir + '/';
   if (d.length <= maxChars) return d;
-  return d.slice(0, maxChars - 2) + '../';
+  return d.slice(0, maxChars - 3) + '../';
 }
 
 const CircuitBoard = forwardRef(function CircuitBoard(
@@ -53,7 +53,7 @@ const CircuitBoard = forwardRef(function CircuitBoard(
 
       for (const k in coords) {
         const [x, y] = coords[k];
-        if (fx >= x - 42 && fx <= x + 42 && fy >= y - 22 && fy <= y + 40) {
+        if (fx >= x - 50 && fx <= x + 50 && fy >= y - 24 && fy <= y + 24) {
           return k;
         }
       }
@@ -203,7 +203,7 @@ const CircuitBoard = forwardRef(function CircuitBoard(
                   const a = coords[e[1]];
                   const b = coords[e[0]];
                   const ex = board.elbows[i];
-                  const d = `M${a[0] + 42} ${a[1]}H${ex}V${b[1]}H${b[0] - 42}`;
+                  const d = `M${a[0] + 47} ${a[1]}H${ex}V${b[1]}H${b[0] - 47}`;
                   const wClass = wireClasses[i] || '';
                   const delay = wireDelays[i] || 0;
 
@@ -250,15 +250,15 @@ const CircuitBoard = forwardRef(function CircuitBoard(
                         <g key={pIdx}>
                           <rect
                             className="pin"
-                            x={x - 32 + pIdx * 16}
-                            y={y - 22}
+                            x={x - 34 + pIdx * 17}
+                            y={y - 23}
                             width="6"
                             height="4"
                           />
                           <rect
                             className="pin"
-                            x={x - 32 + pIdx * 16}
-                            y={y + 18}
+                            x={x - 34 + pIdx * 17}
+                            y={y + 19}
                             width="6"
                             height="4"
                           />
@@ -267,58 +267,57 @@ const CircuitBoard = forwardRef(function CircuitBoard(
 
                       <rect
                         className="shadow"
-                        x={x - 39}
-                        y={y - 15}
-                        width="84"
-                        height="36"
-                        rx="4"
+                        x={x - 45}
+                        y={y - 17}
+                        width="94"
+                        height="38"
+                        rx="5"
                       />
                       <rect
                         className="body"
-                        x={x - 42}
-                        y={y - 18}
-                        width="84"
-                        height="36"
-                        rx="4"
+                        x={x - 47}
+                        y={y - 19}
+                        width="94"
+                        height="38"
+                        rx="5"
                       />
                       <title>{k}</title>
                       <text
                         className="dir"
                         x={x}
-                        y={y - 5}
+                        y={y - 7}
                         textAnchor="middle"
                       >
-                        {formatChipDir(parts.length > 1 ? parts[parts.length - 2] : '', 12)}
+                        {formatChipDir(parts.length > 1 ? parts[parts.length - 2] : '', 16)}
                       </text>
                       <text
                         className="nm"
                         x={x}
-                        y={y + 10}
+                        y={y + 5}
                         textAnchor="middle"
-                        textLength={Math.min(74, Math.max(40, formatChipName(parts[parts.length - 1], 15).length * 6))}
-                        lengthAdjust="spacingAndGlyphs"
                       >
-                        {formatChipName(parts[parts.length - 1], 15)}
+                        {formatChipName(parts[parts.length - 1], 20)}
                       </text>
                       <circle
                         className="lamp"
-                        cx={x + 34}
-                        cy={y - 11}
+                        cx={x + 36}
+                        cy={y - 10}
                         r="3"
                       />
+                      {/* Integrated Switch inside the chip */}
                       <rect
                         className="trk"
-                        x={x - 15}
-                        y={y + 27}
-                        width="30"
-                        height="13"
-                        rx="6.5"
+                        x={x - 13}
+                        y={y + 9}
+                        width="26"
+                        height="7"
+                        rx="3.5"
                       />
                       <circle
                         className="knob"
-                        cx={x - 8}
-                        cy={y + 33.5}
-                        r="5"
+                        cx={isTurnedOn ? x + 7 : x - 7}
+                        cy={y + 12.5}
+                        r="2.6"
                       />
                     </g>
                   );
@@ -326,30 +325,35 @@ const CircuitBoard = forwardRef(function CircuitBoard(
               </g>
             </g>
           ) : (
-            <g transform="translate(30 20)">
+            <g transform="translate(20 12)">
               <rect
-                width="460"
-                height="250"
+                width="480"
+                height="266"
                 rx="12"
                 fill="#151617"
                 stroke="#38393d"
                 strokeWidth="1.2"
               />
               <rect
-                width="460"
-                height="250"
+                width="480"
+                height="266"
                 rx="12"
                 fill={`url(#${patternId})`}
               />
-              <text
-                x="16"
-                y="18"
-                fontSize="8"
-                fill="#6b6d73"
-                fontFamily="Chakra Petch, sans-serif"
-              >
-                Top view: straight trace from imported file to importer
-              </text>
+              <g className="pcb-header-note" transform="translate(18, 12)">
+                <circle cx="4" cy="5" r="2.8" fill="#a855f7" />
+                <text
+                  x="12"
+                  y="8"
+                  fontSize="7.8"
+                  fontWeight="600"
+                  fill="#94a3b8"
+                  fontFamily="'Chakra Petch', sans-serif"
+                  letterSpacing="0.05em"
+                >
+                  CIRCUIT TRACE • FLIP ANY IC SWITCH TO TRACE IMPORTS & CALLERS
+                </text>
+              </g>
 
               {boardEdges.map((e, i) => {
                 const a = coords[e[1]];
@@ -378,9 +382,8 @@ const CircuitBoard = forwardRef(function CircuitBoard(
                 const delay = nodeDelays[k] || 0;
                 const fileName = parts[parts.length - 1];
                 const dirName = parts.length > 1 ? parts[parts.length - 2] : '';
-                const dispName = formatChipName(fileName, 13);
-                const dispDir = formatChipDir(dirName, 10);
-                const textLen = Math.min(62, Math.max(36, dispName.length * 5.2));
+                const dispName = formatChipName(fileName, 20);
+                const dispDir = formatChipDir(dirName, 16);
 
                 return (
                   <g
@@ -399,33 +402,39 @@ const CircuitBoard = forwardRef(function CircuitBoard(
                         onToggleNode(k);
                       }
                     }}
-                    transform={`translate(${x - 37}, ${y - 15})`}
+                    transform={`translate(${x - 47}, ${y - 19})`}
                   >
                     <title>{k}</title>
-                    <rect className="shadow" x="3" y="4" width="74" height="30" rx="4" />
-                    <rect className="body" x="0" y="0" width="74" height="30" rx="4" />
-                    <rect className="trk" x="23" y="33" width="28" height="9" rx="4.5" />
-                    <circle className="knob" cx={isTurnedOn ? 43 : 30} cy="37.5" r="3.8" />
-                    <circle className="lamp" cx="64" cy="7" r="2.6" />
+                    {/* IC Pins top & bottom */}
                     {[0, 1, 2, 3, 4].map((pIdx) => (
                       <g key={pIdx}>
-                        <rect className="pin" x={8 + pIdx * 14} y={-4} width="5" height="4" />
-                        <rect className="pin" x={8 + pIdx * 14} y={30} width="5" height="4" />
+                        <rect className="pin" x={15 + pIdx * 16} y={-4} width="5" height="4" />
+                        <rect className="pin" x={15 + pIdx * 16} y={38} width="5" height="4" />
                       </g>
                     ))}
-                    <text className="dir" x="37" y="10" textAnchor="middle">
+
+                    <rect className="shadow" x="2" y="2" width="94" height="38" rx="5" />
+                    <rect className="body" x="0" y="0" width="94" height="38" rx="5" />
+
+                    {/* Status Lamp LED */}
+                    <circle className="lamp" cx="83" cy="8" r="2.8" />
+
+                    {/* Labels */}
+                    <text className="dir" x="47" y="11" textAnchor="middle">
                       {dispDir}
                     </text>
                     <text
                       className="nm"
-                      x="37"
-                      y="21"
+                      x="47"
+                      y="22"
                       textAnchor="middle"
-                      textLength={textLen}
-                      lengthAdjust="spacingAndGlyphs"
                     >
                       {dispName}
                     </text>
+
+                    {/* Integrated Slider Switch inside the IC body */}
+                    <rect className="trk" x="35" y="26" width="24" height="8" rx="4" />
+                    <circle className="knob" cx={isTurnedOn ? 53 : 41} cy="30" r="2.8" />
                   </g>
                 );
               })}
