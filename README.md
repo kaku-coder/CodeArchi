@@ -1,206 +1,244 @@
-# ⚡ CodeArchi — Codebase Intelligence & Failure Analysis Studio
+# ⚡ CodeArchi
 
-![React](https://img.shields.io/badge/React-19.3-61dafb?style=for-the-badge&logo=react&logoColor=black)
-![Vite](https://img.shields.io/badge/Vite-8.3-646cff?style=for-the-badge&logo=vite&logoColor=white)
-![Web Audio API](https://img.shields.io/badge/Web_Audio_API-Synthesizer-ff9a4a?style=for-the-badge)
-![CSS3 3D](https://img.shields.io/badge/CSS3_3D-Perspective-8fb8a8?style=for-the-badge)
+> **Interactive Codebase Intelligence, Architecture Visualization & Failure Analysis Studio**
 
-**CodeArchi** is an interactive, cyberpunk-terminal themed developer intelligence platform built with React 19 and Vite. It maps source code architecture, traces runtime stack errors back to the source files, calculates change impact blast radiuses, and generates transparent AI insights with code evidence citations.
+[![React](https://img.shields.io/badge/React-19.3-61dafb?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-8.3-646cff?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev/)
+[![Web Audio API](https://img.shields.io/badge/Web_Audio_API-Synthesizer-ff9a4a?style=for-the-badge)](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
+[![CSS3 3D](https://img.shields.io/badge/CSS3_3D-Perspective-8fb8a8?style=for-the-badge)](https://developer.mozilla.org/en-US/docs/Web/CSS/transform-style)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
-The application features a fully interactive **3D Laptop Studio** with scroll-driven opening physics, mechanical keyboard sound effects, an operating system window bar, and dedicated full-page high-resolution views.
+**CodeArchi** is a developer intelligence platform featuring a dark cyberpunk-terminal aesthetic. It maps complex software architectures, simulates signal propagation across dependency circuit boards, traces runtime stack errors directly to source files, computes blast radiuses for proposed changes, and generates transparent AI insights with code citations.
 
----
-
-## 🚀 Key Features
-
-### 1. 💻 Interactive 3D Laptop Studio
-- **Scroll-Driven 3D Opening**: Smoothly unfolds the laptop lid in 3D perspective (`preserve-3d`) as the user scrolls down the page.
-- **Upright Eye-Level Alignment**: Balanced camera angles ensure text and graphs inside the screen remain upright, crisp, and comfortable to read.
-- **Mechanical Keyboard Audio**: Real-time tactile switch click sounds synthesized via the browser-native **Web Audio API** (zero external MP3 files needed).
-- **Dedicated Power / Shutdown Button (`⏻`)**:
-  - Located on the top-right of the keyboard grid.
-  - Clicking `⏻` triggers a CRT power-down animation, powers off the screen, and dims the chassis LED.
-  - Clicking `⏻` again plays a boot chime and restores the system.
-- **Window Control Dots**:
-  - 🔴 **Red (Close / Sleep)**: Closes the laptop lid and smoothly scrolls to top.
-  - 🟡 **Yellow (Minimize)**: Minimizes the active module back to the System Overview (Boot LCD).
-  - 🟢 **Green (Maximize)**: Expands the current module into the dedicated full-page React view.
-- **Interactive Trackpad**: Move your mouse across the laptop trackpad to drive an on-screen glowing virtual pointer that can click buttons and toggle IC chips.
+Everything runs **100% client-side in the browser**—no backend server, no cloud storage, and complete code privacy.
 
 ---
 
-### 2. 📁 Codebase Explorer
-- **Project ZIP Upload**: Drop a ZIP archive of any project on the Explorer page and it is read in the browser (no server, no third party zip library).
-- **Automatic Project Reading**: CodeArchi writes a plain-English summary of what the project does, what stack it uses, where it starts, how big it is and which files matter most.
-- **Directory Tree**: Browse folders and source files with language badges (`TSX · supported`, `TypeScript`, `Not analyzed`).
-- **Syntax Code Viewer**: Inspect code lines with custom line numbering, formatted syntax blocks, and instant `Imports` / `Imported by` reference tags.
+## 📑 Table of Contents
+
+- [Key Highlights](#-key-highlights)
+- [Feature Showcase](#-feature-showcase)
+  - [1. Hierarchical Architecture Tree](#1--hierarchical-architecture-tree)
+  - [2. Interactive Circuit Board (2D & 3D)](#2--interactive-circuit-board-2d--3d)
+  - [3. Interactive 3D Laptop Studio](#3--interactive-3d-laptop-studio)
+  - [4. Codebase Explorer & ZIP Ingestion](#4--codebase-explorer--zip-ingestion)
+  - [5. Failure & Stack Trace Analysis](#5--failure--stack-trace-analysis)
+  - [6. Change Impact & Blast Radius (BFS)](#6--change-impact--blast-radius-bfs)
+  - [7. AI Insights & Test Suggestions](#7--ai-insights--test-suggestions)
+- [Project Architecture](#-project-architecture)
+- [Tech Stack](#-tech-stack)
+- [Getting Started](#-getting-started)
+- [Keyboard Shortcuts](#-keyboard-shortcuts)
+- [License](#-license)
 
 ---
 
-### 3. 📦 One Upload, Every View
-- **Shared Project Context**: Once a ZIP is loaded, the file tree, the code viewer, the dependency board, the blast radius, the failure analysis and the AI insights all read from that project instead of the built in sample.
-- **Real Import Graph**: Imports are extracted from the uploaded sources (ES modules, CommonJS, Python, Java, Go, Rust, PHP, Ruby) and resolved to real file paths.
-- **Project Aware Failure Analysis**: A pasted stack trace is matched against the uploaded files, so the cited evidence is the actual line from your code.
-- **AI Insights From Your Code**: Architecture, hotspot, risk, test coverage and configuration insights are generated from the upload, each with its own confidence score and cited evidence.
-- **Active Project Chip**: Every full page view shows which project is loaded, with a shortcut back to the Explorer.
+## 🌟 Key Highlights
+
+- **Zero-Server Ingestion**: Upload any project ZIP archive; CodeArchi decompresses and parses your codebase in-memory in the browser.
+- **Drag-to-Pan Canvas**: Smooth click-and-drag navigation across large architectural trees with touch and trackpad support.
+- **Hardware-Level Circuit Simulation**: Interactive PCB view with microchip IC packages, integrated DIP switches, and animated electrical wire traces.
+- **Realistic 3D Laptop Studio**: Scroll-driven lid opening physics, Web Audio API mechanical key clicks, CRT monitor power-down, and a virtual trackpad pointer.
+- **Deterministic Blast Radius**: Graph traversal (BFS) that traces direct and indirect dependency chains when modifying files.
+- **Evidence-Citing AI Insights**: High-confidence explanations with verifiable code lines, unknown runtime risk warnings, and automated unit test proposals.
 
 ---
 
-### 4. ⚡ Dependency Intelligence
-- **Isometric SVG PCB Circuit Board**: Renders files as IC chips mounted on a printed circuit board with grounding planes and animated signal traces.
-- **Interactive IC Switches**: Flip file switches to light up connected dependencies with animated pulsing neon wires:
-  - 🟠 **Orange wires**: Files imported by the selected module.
-  - 🟢 **Green wires**: Files that import the selected module.
-- **Real-Time Readout**: Summarizes active relationships with glowing chip tags.
+## 🚀 Feature Showcase
+
+### 1. 🌲 Hierarchical Architecture Tree
+
+Maps your project directories into a structured subsystem tree with metrics and inspection:
+
+- **Drag-to-Pan Canvas**: Click and drag anywhere on the canvas background to pan horizontally and vertically with an active grab cursor.
+- **Zoom & Auto-Fit**: Zoom in (`+`), Zoom out (`−`), or click `Fit` to auto-center the diagram.
+- **Subsystem Cards**: Displays file counts, line counts, internal links, size, and purple donut density gauges.
+- **Inline Display Rules Bar**: Configure rules smoothly without overlapping cards:
+  - `Highlight Deps`: Lights up dependent modules.
+  - `Folders Only`: Hides file lists to focus on high-level architecture.
+  - `Metric Cells`: Toggles file and line stat grids.
+  - `Donut Gauges`: Toggles circular percentage gauges.
+  - `Code Inspector`: Opens a docked syntax code viewer below the tree.
+- **Accidental Click Protection**: Smoothly distinguishes mouse drags from card selection clicks.
 
 ---
 
-### 5. 🔍 Failure Analysis
-- **Trace & Log Parser**: Paste any stack trace or error log to instantly identify relevant files, line numbers, and causes.
-- **Built-in Presets**:
-  - `TypeError`: Handles undefined property reads (`total` in `format.ts`).
-  - `JWT expired`: Explains expired session tokens in `token.ts` and `session.ts`.
-  - `DB refused`: Diagnoses database connection errors on port `5432` in `client.ts`.
-- **Diagnostic Guide**: Outlines ranked relevant source files, potential root causes, and step-by-step investigation procedures.
+### 2. 🔌 Interactive Circuit Board (2D & 3D)
+
+Represents project files and dependencies as a printed circuit board (PCB):
+
+- **Dual View Modes**: Switch seamlessly between **3D Isometric Perspective** and **2D Top-Down View**.
+- **Silicon IC Microchips**: Each file is packaged into a dark IC chip with pin leads, an indicator lamp, and an **integrated ON/OFF rocker switch**.
+- **Interactive Signal Traces**: Flip any microchip switch to pulse electrical signal traces:
+  - 🟠 **Orange Pulse**: Modules imported by the selected file.
+  - 🟢 **Green Pulse**: Modules that import the selected file.
+- **Clean Typography**: Unsquashed, legible labels displaying up to 20-character file and folder names without premature ellipsis truncation.
 
 ---
 
-### 6. 💥 Change Impact Analysis
-- **BFS Blast Radius Visualizer**: Computes a Breadth-First Search over all reverse importers to trace which modules will be affected by a proposed edit.
-- **Staggered Signal Delay**: Visualizes blast propagation with animated wire delays (`--d`).
-- **Impact Summary**: Categorizes direct vs. indirect dependencies and suggests files to retest first.
+### 3. 💻 Interactive 3D Laptop Studio
+
+A 3D workstation built with pure CSS 3D transforms (`preserve-3d`):
+
+- **Scroll-Driven Physics**: Smoothly opens the laptop lid as you scroll down the page.
+- **Synthesized Mechanical Audio**: Real-time tactile switch audio synthesized via the browser-native **Web Audio API** (`OscillatorNode` + `GainNode`), requiring no external MP3 assets.
+- **CRT Power Button (`⏻`)**: Located on the top-right of the keyboard; powers off the screen with a CRT collapse animation and dims system LEDs.
+- **Window Controls**:
+  - 🔴 **Red (Close / Sleep)**: Closes the laptop lid and scrolls to the top.
+  - 🟡 **Yellow (Minimize)**: Minimizes to the System Overview LCD.
+  - 🟢 **Green (Maximize)**: Expands the current section into a dedicated full-page view.
+- **Virtual Trackpad**: Move your cursor over the laptop trackpad to control a glowing on-screen mouse pointer that interacts with buttons and microchips.
+
+---
+
+### 4. 📁 Codebase Explorer & ZIP Ingestion
+
+- **Drag & Drop Archive**: Drop any ZIP archive of your project directly onto the page.
+- **Multi-Language Support**: Automatically parses imports across JavaScript, TypeScript, Python, Java, Go, Rust, PHP, Ruby, and configuration files.
+- **Dual Presentation Modes**:
+  - **Hierarchical Tree Chart**: Subsystem org-chart with density gauges and metrics.
+  - **Classic Split List**: Side-by-side folder directory tree and syntax-highlighted code editor.
+
+---
+
+### 5. 🔍 Failure & Stack Trace Analysis
+
+- **Stack Trace Parser**: Paste any terminal runtime error or exception log to automatically map error frames back to source files.
+- **Built-in Diagnostic Presets**:
+  - `TypeError`: Analyzes undefined property reads.
+  - `JWT expired`: Explains authentication token expirations.
+  - `DB connection refused`: Diagnoses database pool and network connection failures.
+- **Step-by-Step Resolution Guide**: Identifies the primary root-cause file and suggests immediate diagnostic steps.
+
+---
+
+### 6. 💥 Change Impact & Blast Radius (BFS)
+
+- **Reverse Dependency Propagation**: Uses Breadth-First Search (BFS) over the dependency graph to determine all callers affected by a change.
+- **Animated Propagation Waves**: Staggered signal delays (`--d`) visually demonstrate how failures ripple through modules.
+- **Retest Recommendations**: Categorizes direct vs. indirect impacts and ranks which files to retest first.
 
 ---
 
 ### 7. 🧠 AI Insights & Test Suggestions
-- **Root Cause Explanation**: Clear, human-readable breakdown of underlying failures.
-- **10-Bar LED Confidence Meter**: Visual confidence score calculated from observable evidence.
-- **Cited Code Evidence**: Highlights exact lines of code behind each hypothesis.
-- **Uncertainty Warning**: Transparently declares unknown runtime factors ("What we cannot see").
-- **Targeted Test Suites**: Proposes concrete automated unit and integration tests.
+
+- **Root Cause Hypotheses**: Clear, developer-focused breakdown of architectural bottlenecks.
+- **10-Bar LED Confidence Meter**: Displays verifiable confidence scores based on static analysis.
+- **Cited Code Evidence**: Highlights the exact line numbers and code snippets supporting the analysis.
+- **Transparency Warnings**: Outlines runtime unknowns and environment assumptions.
+- **Automated Test Generation**: Generates targeted unit and integration test code snippets.
 
 ---
 
-### 8. 📌 Fixed Top Navigation Bar
-- Pinned to the top of the viewport (`position: fixed`) with a glassmorphism blur backdrop.
-- Allows instant switching between **Home (3D Studio)** and dedicated **Full-Page Views** for Explorer, Dependencies, Failures, Impact, and AI Insights.
-- Never scrolls away or obstructs content.
-
----
-
-## 📂 Project Structure
+## 📂 Project Architecture
 
 ```
 CodeArchi/
-├── frontend/                                  // React + Vite Application
-│   ├── index.html                             // HTML template with Chakra Petch & IBM Plex Sans
-│   ├── package.json                           // Project dependencies & scripts
-│   ├── vite.config.js                         // Vite configuration
+├── frontend/
+│   ├── index.html                   // Cyberpunk shell with Chakra Petch & IBM Plex fonts
+│   ├── package.json                 // React 19, Vite, build scripts
+│   ├── vite.config.js               // Vite build setup
 │   └── src/
-│       ├── main.jsx                           // React DOM mounting point
-│       ├── App.jsx                            // Master application layout & state coordinator
-│       ├── index.css                          // Complete dark cyber-hardware stylesheet & 3D tokens
-│       ├── App.css                            // App-level reset styles
-│       │
-│       ├── data/
-│       │   ├── codebaseData.js                // Mock files, imports graph, PCB coordinates & BFS impact logic
-│       │   ├── failurePresets.js              // Error trace presets, regex patterns & diagnostic data
-│       │   ├── projectModel.js                 // Normalised project model (files, graph, board layout) & sample project
-│       │   └── projectInsights.js             // Insights generated from an uploaded project
+│       ├── main.jsx                 // Application bootstrap
+│       ├── App.jsx                  // Route coordinator & state manager
+│       ├── index.css                // Dark cyber-hardware design system
 │       │
 │       ├── context/
-│       │   └── projectContext.js               // React context holding the active project (sample or upload)
+│       │   └── projectContext.js    // Active project context (Sample or Uploaded ZIP)
+│       │
+│       ├── data/
+│       │   ├── codebaseData.js      // Mock files, PCB coordinates & BFS impact logic
+│       │   ├── failurePresets.js    // Stack trace presets & diagnostic definitions
+│       │   ├── projectModel.js      // Normalized project model & circuit coordinate layout
+│       │   └── projectInsights.js   // Automated insight generator
 │       │
 │       ├── utils/
-│       │   ├── soundEffects.js                // Web Audio API synthesizer for tactile clicks & power tones
-│       │   ├── zipReader.js                    // Dependency free ZIP reader (central directory + inflate)
-│       │   └── projectAnalyzer.js              // Turns an archive into files, import graph, risks & summary
+│       │   ├── soundEffects.js      // Web Audio API keyboard & power synthesizer
+│       │   ├── zipReader.js         // Client-side ZIP central-directory decompressor
+│       │   └── projectAnalyzer.js   // AST & import parser for multi-language projects
 │       │
 │       └── components/
-│           ├── Header/
-│           │   └── Header.jsx                 // Fixed top navbar with active route pills & pulsing LED
-│           ├── Hero/
-│           │   └── Hero.jsx                   // Hero showcase unit with glowing LCD brand cells
+│           ├── Header/              // Fixed top navigation bar
+│           ├── Hero/                // Hero showcase unit
 │           ├── Common/
-│           │   ├── CircuitBoard.jsx           // Reusable isometric SVG PCB with interactive IC switches
-│           │   └── ProjectChip.jsx            // Active project badge shown on every full page view
+│           │   ├── CircuitBoard.jsx // 2D/3D PCB with silicon microchip switches
+│           │   └── ProjectChip.jsx  // Active project status indicator
 │           ├── Explorer/
-│           │   ├── CodeExplorer.jsx           // Codebase explorer layout container
-│           │   ├── UploadPanel.jsx            // ZIP upload button, drag & drop zone & archive status
-│           │   ├── ProjectSummary.jsx         // Written summary of what the loaded project does
-│           │   ├── FileTree.jsx               // Folder directory tree
-│           │   └── CodeViewer.jsx             // Code preview, line numbers & imports tags
+│           │   ├── CodeExplorer.jsx // Laptop screen explorer component
+│           │   ├── OrgTreeView.jsx  // Subsystem tree with drag-to-pan & zoom
+│           │   ├── FileTree.jsx     // Classic directory tree
+│           │   ├── CodeViewer.jsx   // Syntax-highlighted code editor
+│           │   ├── UploadPanel.jsx  // ZIP drag & drop uploader
+│           │   └── ProjectSummary.jsx // Project overview & architecture summary
 │           ├── Dependency/
-│           │   ├── DependencyIntelligence.jsx // Dependency graph section container
-│           │   └── DependencyReadout.jsx      // Active module import/caller chips
-│           ├── FailureAnalysis/
-│           │   ├── FailureAnalysis.jsx        // Failure analyzer section container
-│           │   ├── PresetSelector.jsx         // Preset selector buttons (TypeError, JWT, DB)
-│           │   ├── ProjectRisks.jsx           // Risky spots found in the uploaded code
-│           │   └── AnalysisResult.jsx         // Ranked files, causes & investigation steps
-│           ├── ImpactAnalysis/
-│           │   ├── ImpactAnalysis.jsx         // Change impact section container
-│           │   └── ImpactReadout.jsx          // Blast radius counter, direct vs indirect chips & retest guide
-│           ├── AiInsights/
-│           │   └── AiInsights.jsx             // AI insights, 10-bar LED confidence meter & test suggestions
-│           ├── Laptop/
-│           │   ├── LaptopScene.jsx            // 3D scene physics, scroll math & camera perspective
-│           │   ├── LaptopDeck.jsx             // Keyboard grid with power key & trackpad
-│           │   ├── Trackpad.jsx               // Interactive virtual mouse driver
-│           │   └── LaptopScreen.jsx           // OS window bar, slide deck & shutdown screen
-│           └── Footer/
-│               └── Footer.jsx                 // Bottom status bar
-├── .gitignore                                 // Git ignore rules (node_modules, logs, etc.)
-├── LICENSE                                    // MIT License
-└── README.md                                  // Project documentation
+│           │   ├── DependencyIntelligence.jsx // Dependency circuit board view
+│           │   └── DependencyTree.jsx         // Alternate tree view
+│           ├── FailureAnalysis/     // Log parser & diagnostic report
+│           ├── ImpactAnalysis/      // BFS blast radius visualizer
+│           ├── AiInsights/          // Evidence-backed insight cards
+│           └── Laptop/
+│               ├── LaptopScene.jsx  // 3D CSS perspective & scroll physics
+│               ├── LaptopDeck.jsx   // Mechanical keyboard & trackpad
+│               ├── Trackpad.jsx     // Mouse-tracking virtual pointer
+│               └── LaptopScreen.jsx // Window header bar & slide deck
+├── .gitignore
+├── LICENSE
+└── README.md
 ```
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Framework**: [React 19](https://react.dev/)
-- **Build Tool**: [Vite 8](https://vite.dev/)
-- **Audio**: Web Audio API (`AudioContext`, `OscillatorNode`, `GainNode`)
-- **Typography**: Google Fonts — [Chakra Petch](https://fonts.google.com/specimen/Chakra+Petch) (Display) & [IBM Plex Sans](https://fonts.google.com/specimen/IBM+Plex+Sans) (Body)
-- **Styling**: Vanilla CSS3 (Custom Properties, 3D Transforms, Isometric Matrix SVG, CSS Keyframe Animations)
+| Layer | Technology |
+|---|---|
+| **Frontend Framework** | [React 19](https://react.dev/) |
+| **Build Tool** | [Vite 8](https://vite.dev/) |
+| **Audio Engine** | Native [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API) (Synthesizer) |
+| **Typography** | [Chakra Petch](https://fonts.google.com/specimen/Chakra+Petch) (Headings) & [IBM Plex Sans](https://fonts.google.com/specimen/IBM+Plex+Sans) (Body) |
+| **Styling** | Vanilla CSS3 (3D Transforms, Glassmorphism, CSS Custom Properties) |
+| **Archive Parsing** | Client-side zero-dependency streaming ZIP reader |
 
 ---
 
 ## ⚡ Getting Started
 
 ### Prerequisites
-- Node.js (version 18+ recommended)
-- npm or yarn
+
+- [Node.js](https://nodejs.org/) (v18.0 or newer recommended)
+- `npm` or `yarn`
 
 ### Installation & Run
 
-1. Clone or navigate to the project directory:
+1. **Clone the repository:**
    ```bash
+   git clone https://github.com/kaku-coder/CodeArchi.git
    cd CodeArchi/frontend
    ```
 
-2. Install dependencies:
+2. **Install dependencies:**
    ```bash
    npm install
    ```
 
-3. Start the local development server:
+3. **Start the local dev server:**
    ```bash
    npm run dev
    ```
 
-4. Open your browser and navigate to:
+4. **Open in your browser:**
    ```
    http://localhost:5173/
    ```
 
 ### Production Build
-To create an optimized production bundle:
+
+To build an optimized production bundle:
 ```bash
 npm run build
 ```
-To preview the production build locally:
+
+To preview the production bundle locally:
 ```bash
 npm run preview
 ```
@@ -211,32 +249,18 @@ npm run preview
 
 | Key | Action |
 |:---:|---|
-| `1` | Jump to **Codebase Explorer** slide |
-| `2` | Jump to **Dependency Intelligence** slide |
-| `3` | Jump to **Failure Analysis** slide |
-| `4` | Jump to **Change Impact Analysis** slide |
-| `5` | Jump to **AI Insights** slide |
+| `1` | Jump to **Codebase Explorer** |
+| `2` | Jump to **Dependency Intelligence** |
+| `3` | Jump to **Failure Analysis** |
+| `4` | Jump to **Change Impact Analysis** |
+| `5` | Jump to **AI Insights** |
 | `←` | Previous slide |
 | `→` / `Enter` | Next slide |
-| `Esc` | Close laptop lid & scroll to top |
+| `Esc` | Close laptop lid & smooth scroll to top |
 | `⏻` (Power Key) | Toggle **Power Shutdown** / **Boot Up** |
 
 ---
 
-## 🎮 Interactive Controls Guide
-
-- **Scroll Down**: Smoothly opens the 3D laptop and cycles through feature slides.
-- **Navbar Buttons**: Click any tab (**Home**, **Explorer**, **Dependencies**, **Failures**, **Impact**, **AI Insights**) to jump directly to dedicated full-page views.
-- **Window Dots**:
-  - Hover over the dots on the laptop window bar to see Mac-style symbols (`×`, `−`, `⤢`).
-  - Click 🔴 **Red** to close the laptop.
-  - Click 🟡 **Yellow** to minimize to the System Overview.
-  - Click 🟢 **Green** to maximize into full-page view.
-- **Power Button (`⏻`)**: Located on the top-right of the keyboard. Turns off the screen and shuts down the system. Click again to boot up.
-- **Trackpad**: Move cursor over the laptop trackpad to control the virtual screen pointer. Click to interact with on-screen elements.
-- **IC Switches**: Click any microchip on the circuit board to toggle dependencies or calculate change blast radius.
-
----
-
 ## 📄 License
-This project is open-source and licensed under the [MIT License](LICENSE).
+
+This project is licensed under the [MIT License](LICENSE).

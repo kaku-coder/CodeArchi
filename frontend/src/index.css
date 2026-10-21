@@ -2132,6 +2132,7 @@ footer {
 }
 
 .org-tree-canvas {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2139,6 +2140,129 @@ footer {
   min-width: 100%;
   margin: 0 auto;
   justify-content: safe center;
+  padding: 30px 60px 50px;
+}
+
+/* Connection wires between top-level folders */
+.org-conn-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 5;
+  overflow: visible;
+}
+
+.org-conn-path {
+  fill: none;
+  stroke-width: 2;
+  opacity: 0.85;
+  stroke-dasharray: 6 4;
+  animation: orgConnDash 1.4s linear infinite;
+}
+
+.org-conn-dot {
+  fill: #fbbf24;
+  opacity: 0.9;
+}
+
+.org-conn-label-bg {
+  fill: rgba(15, 16, 24, 0.9);
+  stroke: rgba(251, 191, 36, 0.45);
+  stroke-width: 1;
+}
+
+.org-conn-label {
+  fill: #fcd34d;
+  font: 700 9px 'Chakra Petch', sans-serif;
+  letter-spacing: 0.04em;
+  dominant-baseline: middle;
+}
+
+/* Folder connection chips */
+.dir-conn-chips {
+  margin-top: 9px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.conn-chips-label {
+  font: 700 0.56rem 'Chakra Petch', sans-serif;
+  letter-spacing: 0.14em;
+  color: #94a3b8;
+}
+
+.conn-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.conn-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: 600 0.68rem 'Chakra Petch', sans-serif;
+  color: #fcd34d;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.32);
+  border-radius: 999px;
+  padding: 2px 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.conn-chip:hover {
+  background: rgba(251, 191, 36, 0.22);
+  border-color: rgba(251, 191, 36, 0.6);
+  transform: translateY(-1px);
+}
+
+.conn-chip-count {
+  font: 700 0.6rem ui-monospace, Menlo, monospace;
+  color: #fff;
+  background: rgba(251, 191, 36, 0.35);
+  border-radius: 999px;
+  padding: 0 5px;
+}
+
+@keyframes orgConnDash {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+/* Collapsible folder header button */
+.org-node-header-btn {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  padding: 0;
+  cursor: pointer;
+}
+
+.org-node-header-btn:hover .org-node-title {
+  color: #fbbf24;
+}
+
+.org-expand-arrow {
+  display: inline-block;
+  width: 11px;
+  margin-right: 5px;
+  color: #94a3b8;
+  transition: transform 0.16s ease;
+}
+
+.org-expand-arrow.open {
+  transform: rotate(90deg);
+  color: #fbbf24;
 }
 
 /* LEVEL 1: Root Project Node */
@@ -2149,6 +2273,8 @@ footer {
 }
 
 .org-node-card {
+  position: relative;
+  z-index: 1;
   background: linear-gradient(180deg, #1f212d 0%, #151620 100%);
   border: 1.5px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
@@ -2330,6 +2456,138 @@ footer {
 .dir-folder-icon {
   font-size: 0.9rem;
   margin-right: 4px;
+}
+
+/* Nested subfolders inside an expanded folder card */
+.dir-file-members .org-branch-column {
+  min-width: 0;
+  max-width: none;
+  width: 100%;
+  flex: 1 1 auto;
+  align-items: stretch;
+  margin-top: 4px;
+  padding-left: 12px;
+  border-left: 1px dashed rgba(168, 85, 247, 0.4);
+}
+
+.dir-file-members .org-branch-column::before,
+.dir-file-members .org-branch-column::after {
+  display: none;
+}
+
+.dir-file-members .org-node-card {
+  padding: 9px 11px;
+  background: linear-gradient(180deg, rgba(31, 33, 45, 0.9) 0%, rgba(21, 22, 32, 0.9) 100%);
+}
+
+.dir-file-members .org-node-title {
+  font-size: 0.86rem;
+}
+
+/* Link level picker */
+.org-level-picker {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 7px;
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.level-picker-label {
+  font: 700 0.6rem 'Chakra Petch', sans-serif;
+  letter-spacing: 0.1em;
+  color: var(--mute);
+  margin-right: 3px;
+}
+
+.level-picker-btn {
+  font: 700 0.68rem 'Chakra Petch', sans-serif;
+  color: var(--ink);
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+  padding: 2px 9px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.level-picker-btn:hover {
+  background: rgba(251, 191, 36, 0.16);
+  color: #fcd34d;
+}
+
+.level-picker-btn.on {
+  background: rgba(251, 191, 36, 0.22);
+  color: #fcd34d;
+  box-shadow: inset 0 0 0 1px rgba(251, 191, 36, 0.45);
+}
+
+/* Folder Connection Map panel */
+.org-conn-map {
+  margin-top: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(24, 25, 36, 0.9), rgba(16, 17, 25, 0.9));
+  padding: 12px 14px;
+}
+
+.conn-map-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 700 0.78rem 'Chakra Petch', sans-serif;
+  letter-spacing: 0.06em;
+  color: #fcd34d;
+  text-transform: uppercase;
+  margin-bottom: 9px;
+}
+
+.conn-map-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fbbf24;
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.7);
+}
+
+.conn-map-sub {
+  font: 500 0.68rem ui-monospace, Menlo, monospace;
+  color: #94a3b8;
+  text-transform: none;
+  letter-spacing: 0;
+  margin-left: 4px;
+}
+
+.conn-map-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.conn-map-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font: 600 0.76rem ui-monospace, Menlo, monospace;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.24);
+  border-radius: 8px;
+  padding: 4px 10px;
+}
+
+.conn-map-folder {
+  color: #e2e8f0;
+}
+
+.conn-map-arrow {
+  color: #fbbf24;
+}
+
+.conn-map-count {
+  color: #94a3b8;
+  font-size: 0.68rem;
 }
 
 /* File Members Stack (Org Chart Employees List) */

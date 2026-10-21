@@ -15,7 +15,6 @@ import ImpactReadout from './components/ImpactAnalysis/ImpactReadout';
 import PresetSelector from './components/FailureAnalysis/PresetSelector';
 import AnalysisResult from './components/FailureAnalysis/AnalysisResult';
 import AiInsights from './components/AiInsights/AiInsights';
-import Footer from './components/Footer/Footer';
 import { FAILURE_PRESETS, analyzeErrorLog, buildExampleTrace } from './data/failurePresets';
 import { SAMPLE_PROJECT } from './data/projectModel';
 import { ProjectContext } from './context/projectContext';
@@ -372,8 +371,6 @@ export default function App() {
           <AiInsights result={analysisResult} project={project} />
         </div>
       )}
-
-      <Footer />
     </ProjectContext.Provider>
   );
 }
