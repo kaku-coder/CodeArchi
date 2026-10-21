@@ -262,8 +262,8 @@ function adaptPresetToProject(preset, project) {
       preset.unk +
       (missing.length
         ? ' The upload does not contain ' +
-          missing.join(', ') +
-          ', so that part of the trace is not in the code.'
+        missing.join(', ') +
+        ', so that part of the trace is not in the code.'
         : ''),
     tests: preset.tests
   };
@@ -300,34 +300,34 @@ function analyzeTrace(text, project) {
   const causes = hint
     ? [hint.cause]
     : [
-        'The trace names ' +
-          (matched.length ? matched[0].path : 'a file') +
-          ', but the runtime state that produced the failure is not in the code.',
-        'The next step is to reproduce the failure and watch the values around that line.'
-      ];
+      'The trace names ' +
+      (matched.length ? matched[0].path : 'a file') +
+      ', but the runtime state that produced the failure is not in the code.',
+      'The next step is to reproduce the failure and watch the values around that line.'
+    ];
 
   const steps = hint
     ? hint.steps
     : [
-        'Reproduce the failure with the same input that produced the trace.',
-        'Add a log line just before the frame named in the trace.',
-        'Compare the logged value with what the code expects.'
-      ];
+      'Reproduce the failure with the same input that produced the trace.',
+      'Add a log line just before the frame named in the trace.',
+      'Compare the logged value with what the code expects.'
+    ];
 
   const tests = matched.length
     ? matched.slice(0, 3).map((item) => {
-        const name = item.path.split('/').pop().replace(/\.[^.]+$/, '');
-        return 'Add a regression test for ' + name + ' that fails with this error.';
-      })
+      const name = item.path.split('/').pop().replace(/\.[^.]+$/, '');
+      return 'Add a regression test for ' + name + ' that fails with this error.';
+    })
     : ['Add a test that reproduces the reported failure before changing any code.'];
 
   const conf = Math.max(2, Math.min(9, 3 + matched.length * 2));
 
   const why = matched.length
     ? 'The trace points into ' +
-      matched[0].path +
-      (matched[0].line ? ' at line ' + matched[0].line : '') +
-      ' of the uploaded project, and the code at that line is shown as evidence below.'
+    matched[0].path +
+    (matched[0].line ? ' at line ' + matched[0].line : '') +
+    ' of the uploaded project, and the code at that line is shown as evidence below.'
     : 'The uploaded project was searched for every path in the trace, but none of them exist in it, so the failure cannot be pinned to a file yet.';
 
   return {
@@ -336,12 +336,12 @@ function analyzeTrace(text, project) {
     files: files.length
       ? files
       : [
-          [
-            'No matching file in the upload',
-            null,
-            'The trace names a path that is not part of this project'
-          ]
-        ],
+        [
+          'No matching file in the upload',
+          null,
+          'The trace names a path that is not part of this project'
+        ]
+      ],
     causes,
     steps,
     why,
@@ -349,12 +349,12 @@ function analyzeTrace(text, project) {
     ev: ev.length
       ? ev
       : [
-          [
-            'No matching file in the upload',
-            0,
-            'Every path in the trace was looked for in the upload and none matched.'
-          ]
-        ],
+        [
+          'No matching file in the upload',
+          0,
+          'Every path in the trace was looked for in the upload and none matched.'
+        ]
+      ],
     unk: 'The uploaded code shows what the code does, not what happened at runtime. The input that triggered the failure and the state at that moment are not in the archive.',
     tests
   };

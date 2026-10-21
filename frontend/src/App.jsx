@@ -3,11 +3,13 @@ import Header from './components/Header/Header';
 import LaptopScene from './components/Laptop/LaptopScene';
 import FileTree from './components/Explorer/FileTree';
 import CodeViewer from './components/Explorer/CodeViewer';
+import OrgTreeView from './components/Explorer/OrgTreeView';
 import UploadPanel from './components/Explorer/UploadPanel';
 import ProjectSummary from './components/Explorer/ProjectSummary';
 import ProjectChip from './components/Common/ProjectChip';
 import ProjectRisks from './components/FailureAnalysis/ProjectRisks';
 import CircuitBoard from './components/Common/CircuitBoard';
+import DependencyTree from './components/Dependency/DependencyTree';
 import DependencyReadout from './components/Dependency/DependencyReadout';
 import ImpactReadout from './components/ImpactAnalysis/ImpactReadout';
 import PresetSelector from './components/FailureAnalysis/PresetSelector';
@@ -21,6 +23,8 @@ import { ProjectContext } from './context/projectContext';
 export default function App() {
   const [activePage, setActivePage] = useState('home');
   const [currentSlide, setCurrentSlide] = useState(-1);
+  const [depsView, setDepsView] = useState('tree');
+  const [explorerView, setExplorerView] = useState('org');
 
   // Active project: the built in sample, or the uploaded archive
   const [project, setProject] = useState(SAMPLE_PROJECT);
@@ -192,19 +196,43 @@ export default function App() {
           </div>
 
           <div className="panel unit" style={{ padding: '24px', marginTop: '24px' }}>
-            <div
-              className="explorer"
-              style={{
-                gridTemplateColumns: 'minmax(240px, 280px) minmax(0, 1fr)',
-                gap: '24px'
-              }}
-            >
-              <FileTree
+            <div className="deps-tabs" style={{ marginBottom: '20px' }}>
+              <button
+                type="button"
+                className={`key ${explorerView === 'org' ? 'hot' : ''}`}
+                onClick={() => setExplorerView('org')}
+              >
+                🌳 Hierarchical Tree Chart
+              </button>
+              <button
+                type="button"
+                className={`key ${explorerView === 'split' ? 'hot' : ''}`}
+                onClick={() => setExplorerView('split')}
+              >
+                📋 Classic Split List
+              </button>
+            </div>
+
+            {explorerView === 'org' ? (
+              <OrgTreeView
                 selectedFile={selectedFile}
                 onSelectFile={setSelectedFile}
               />
-              <CodeViewer selectedFile={selectedFile} />
-            </div>
+            ) : (
+              <div
+                className="explorer"
+                style={{
+                  gridTemplateColumns: 'minmax(240px, 280px) minmax(0, 1fr)',
+                  gap: '24px'
+                }}
+              >
+                <FileTree
+                  selectedFile={selectedFile}
+                  onSelectFile={setSelectedFile}
+                />
+                <CodeViewer selectedFile={selectedFile} />
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -218,21 +246,44 @@ export default function App() {
             </span>
             <h1>See how files connect.</h1>
             <p>
-              Imports and code relationships are mapped as an interactive circuit board. Flip any file’s switch to trace imported modules and callers in real time.
+              Imports and code relationships are mapped as an interactive circuit board or as a clear tree. Flip any file’s switch to trace imported modules and callers in real time.
             </p>
             <ProjectChip project={project} onChange={goToExplorer} />
           </div>
-          <div className="panel unit" style={{ padding: '28px' }}>
-            <CircuitBoard
-              ref={depsBoardRef}
-              id="g1_full"
-              mode="deps"
-              activeMap={depsActive}
-              onToggleNode={handleToggleDepNode}
-            />
-            <DependencyReadout
-              activeKeys={Object.keys(depsActive).filter((k) => depsActive[k])}
-            />
+          <div className="panel unit" style={{ padding: '24px' }}>
+            <div className="deps-tabs">
+              <button
+                type="button"
+                className={`key ${depsView === 'tree' ? 'hot' : ''}`}
+                onClick={() => setDepsView('tree')}
+              >
+                Tree View
+              </button>
+              <button
+                type="button"
+                className={`key ${depsView === 'board' ? 'hot' : ''}`}
+                onClick={() => setDepsView('board')}
+              >
+                Circuit Board
+              </button>
+            </div>
+
+            {depsView === 'tree' ? (
+              <DependencyTree activeMap={depsActive} onToggleNode={handleToggleDepNode} />
+            ) : (
+              <>
+                <CircuitBoard
+                  ref={depsBoardRef}
+                  id="g1_full"
+                  mode="deps"
+                  activeMap={depsActive}
+                  onToggleNode={handleToggleDepNode}
+                />
+                <DependencyReadout
+                  activeKeys={Object.keys(depsActive).filter((k) => depsActive[k])}
+                />
+              </>
+            )}
           </div>
         </div>
       )}
