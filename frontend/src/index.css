@@ -1893,27 +1893,7 @@ footer {
   box-shadow: 0 0 14px rgba(255, 154, 74, 0.45);
 }
 
-/* Full width layout for tree view inside laptop slide */
-.feat.feat-wide-tree {
-  display: flex !important;
-  flex-direction: column !important;
-  grid-template-columns: none !important;
-  gap: 14px !important;
-  padding: 14px 18px !important;
-  width: 100% !important;
-}
 
-.feat.feat-wide-tree .explorer-header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.feat.feat-wide-tree .panel.unit {
-  width: 100%;
-}
 
 .org-tree-workspace {
   position: relative;
@@ -2110,13 +2090,45 @@ footer {
   color: #f43f5e;
 }
 
-/* Horizontal Scroll Container - with safe centering */
+.org-pan-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(168, 85, 247, 0.08);
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font: 600 0.7rem 'Chakra Petch', sans-serif;
+  color: #c084fc;
+  user-select: none;
+}
+
+.org-pan-hint .pan-icon {
+  font-size: 0.82rem;
+}
+
+/* Horizontal & Vertical Drag-to-Pan Scroll Container */
 .org-tree-scroll-container {
   width: 100%;
   overflow-x: auto;
-  padding: 8px 6px 26px;
+  overflow-y: auto;
+  max-height: 650px;
+  padding: 12px 10px 28px;
   scrollbar-width: thin;
   scrollbar-color: #a855f7 rgba(0, 0, 0, 0.3);
+  cursor: grab;
+  user-select: none;
+}
+
+.org-tree-scroll-container.is-dragging {
+  cursor: grabbing !important;
+  user-select: none;
+  scroll-behavior: auto;
+}
+
+.org-tree-scroll-container.is-dragging * {
+  cursor: grabbing !important;
+  pointer-events: none;
 }
 
 .org-tree-canvas {
