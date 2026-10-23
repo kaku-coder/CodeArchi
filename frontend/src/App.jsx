@@ -3,7 +3,6 @@ import Header from './components/Header/Header';
 import LaptopScene from './components/Laptop/LaptopScene';
 import FileTree from './components/Explorer/FileTree';
 import CodeViewer from './components/Explorer/CodeViewer';
-import OrgTreeView from './components/Explorer/OrgTreeView';
 import UploadPanel from './components/Explorer/UploadPanel';
 import ProjectSummary from './components/Explorer/ProjectSummary';
 import ProjectChip from './components/Common/ProjectChip';
@@ -23,7 +22,6 @@ export default function App() {
   const [activePage, setActivePage] = useState('home');
   const [currentSlide, setCurrentSlide] = useState(-1);
   const [depsView, setDepsView] = useState('tree');
-  const [explorerView, setExplorerView] = useState('org');
 
   // Active project: the built in sample, or the uploaded archive
   const [project, setProject] = useState(SAMPLE_PROJECT);
@@ -195,43 +193,19 @@ export default function App() {
           </div>
 
           <div className="panel unit" style={{ padding: '24px', marginTop: '24px' }}>
-            <div className="deps-tabs" style={{ marginBottom: '20px' }}>
-              <button
-                type="button"
-                className={`key ${explorerView === 'org' ? 'hot' : ''}`}
-                onClick={() => setExplorerView('org')}
-              >
-                🌳 Hierarchical Tree Chart
-              </button>
-              <button
-                type="button"
-                className={`key ${explorerView === 'split' ? 'hot' : ''}`}
-                onClick={() => setExplorerView('split')}
-              >
-                📋 Classic Split List
-              </button>
-            </div>
-
-            {explorerView === 'org' ? (
-              <OrgTreeView
+            <div
+              className="explorer"
+              style={{
+                gridTemplateColumns: 'minmax(240px, 280px) minmax(0, 1fr)',
+                gap: '24px'
+              }}
+            >
+              <FileTree
                 selectedFile={selectedFile}
                 onSelectFile={setSelectedFile}
               />
-            ) : (
-              <div
-                className="explorer"
-                style={{
-                  gridTemplateColumns: 'minmax(240px, 280px) minmax(0, 1fr)',
-                  gap: '24px'
-                }}
-              >
-                <FileTree
-                  selectedFile={selectedFile}
-                  onSelectFile={setSelectedFile}
-                />
-                <CodeViewer selectedFile={selectedFile} />
-              </div>
-            )}
+              <CodeViewer selectedFile={selectedFile} />
+            </div>
           </div>
         </div>
       )}

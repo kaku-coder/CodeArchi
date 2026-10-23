@@ -277,18 +277,51 @@ export default function BlueprintGraph({ activeMap = {}, onToggleNode }) {
     return Object.values(activeMap).some(Boolean);
   }, [activeMap]);
 
-  // Set of nodes directly connected to any active node (dependencies & callers)
-  const connectedNodeSet = useMemo(() => {
-    if (!hasActiveSelection) return new Set();
-    const set = new Set();
+  // Map of nodes directly connected to any active node (dependencies & callers)
+  const connectionMap = useMemo(() => {
+    if (!hasActiveSelection) {
+      return { imports: new Set(), callers: new Set(), all: new Set() };
+    }
+
+    const imports = new Set();
+    const callers = new Set();
+    const all = new Set();
+    const edges = project.edges || [];
+
+    // All active selected nodes
     Object.keys(activeMap).forEach((p) => {
       if (activeMap[p]) {
-        set.add(p);
-        (project.imports[p] || []).forEach((t) => set.add(t));
-        (project.importedBy[p] || []).forEach((c) => set.add(c));
+        all.add(p);
       }
     });
-    return set;
+
+    // Check all graph edges (from -> to)
+    edges.forEach(([from, to]) => {
+      if (activeMap[from]) {
+        imports.add(to);
+        all.add(to);
+      }
+      if (activeMap[to]) {
+        callers.add(from);
+        all.add(from);
+      }
+    });
+
+    // Fallback checks from project.imports and project.importedBy dictionaries
+    Object.keys(activeMap).forEach((p) => {
+      if (activeMap[p]) {
+        (project.imports?.[p] || []).forEach((t) => {
+          imports.add(t);
+          all.add(t);
+        });
+        (project.importedBy?.[p] || []).forEach((c) => {
+          callers.add(c);
+          all.add(c);
+        });
+      }
+    });
+
+    return { imports, callers, all };
   }, [activeMap, hasActiveSelection, project]);
 
   // Edges list with calculated cubic bezier wire splines
@@ -556,16 +589,32 @@ export default function BlueprintGraph({ activeMap = {}, onToggleNode }) {
           {/* HTML Nodes Layer: Blueprint Nodes matching Unreal Engine */}
           <div className="bp-nodes-layer">
             {nodes.map((node) => {
-              const isConnected = !hasActiveSelection || connectedNodeSet.has(node.path);
-              const isDimmed = (hasActiveSelection && !isConnected) || !node.matchesCategory || (!node.matchesSearch && searchQuery);
-              const isHidden = soloMode && hasActiveSelection && !node.isActive && !connectedNodeSet.has(node.path);
+              const isSourceActive = !!activeMap[node.path];
+              const isImportedTarget = hasActiveSelection && !isSourceActive && connectionMap.imports.has(node.path);
+              const isCaller = hasActiveSelection && !isSourceActive && connectionMap.callers.has(node.path);
+              const isConnected = isSourceActive || isImportedTarget || isCaller;
+
+              const isDimmed = hasActiveSelection && !isConnected;
+              const isHidden = soloMode && hasActiveSelection && !isConnected;
 
               if (isHidden) return null;
+
+              // Card status class:
+              let cardStatusClass = '';
+              if (isSourceActive) {
+                cardStatusClass = 'active-node';
+              } else if (isImportedTarget) {
+                cardStatusClass = 'connected-target-node';
+              } else if (isCaller) {
+                cardStatusClass = 'connected-caller-node';
+              } else if (isDimmed) {
+                cardStatusClass = 'dimmed-node';
+              }
 
               return (
                 <div
                   key={node.path}
-                  className={`bp-node-card ${node.isActive ? 'active-node' : ''} ${!node.isActive && isConnected && hasActiveSelection ? 'connected-node' : ''} ${isDimmed ? 'dimmed-node' : ''} ${searchQuery && node.matchesSearch ? 'search-match' : ''}`}
+                  className={`bp-node-card ${cardStatusClass} ${searchQuery && node.matchesSearch ? 'search-match' : ''}`}
                   style={{
                     transform: `translate(${node.x}px, ${node.y}px)`,
                     width: `${node.width}px`
@@ -650,13 +699,23 @@ export default function BlueprintGraph({ activeMap = {}, onToggleNode }) {
                   </div>
                 </div>
 
-                {/* Active Indicator Strip */}
-                {node.isActive && (
+                {/* Active or Connected Status Strip */}
+                {isSourceActive ? (
                   <div className="bp-active-strip">
                     <span className="bp-active-led"></span>
-                    <span>ACTIVE DEPENDENCY TRACE</span>
+                    <span>ACTIVE SELECTED FILE</span>
                   </div>
-                )}
+                ) : isImportedTarget ? (
+                  <div className="bp-connected-strip target-strip">
+                    <span className="bp-target-led"></span>
+                    <span>CONNECTED DEPENDENCY</span>
+                  </div>
+                ) : isCaller ? (
+                  <div className="bp-connected-strip caller-strip">
+                    <span className="bp-caller-led"></span>
+                    <span>CALLER MODULE</span>
+                  </div>
+                ) : null}
               </div>
               );
             })}

@@ -3197,6 +3197,119 @@ footer {
   50% { opacity: 1; transform: scale(1.02); }
 }
 
+/* Blueprint Secondary Filter & Search Strip */
+.bp-filter-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: rgba(18, 19, 25, 0.98);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.bp-search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  padding: 4px 10px;
+  min-width: 210px;
+  transition: all 0.18s ease;
+}
+
+.bp-search-box:focus-within {
+  border-color: #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+}
+
+.bp-search-icon {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.bp-search-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #f1f5f9;
+  font: 500 0.78rem ui-monospace, Menlo, monospace;
+  width: 100%;
+}
+
+.bp-search-input::placeholder {
+  color: #64748b;
+}
+
+.bp-clear-search {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 0 2px;
+}
+
+.bp-category-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.bp-cat-pill {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  color: #94a3b8;
+  font: 600 0.72rem 'Chakra Petch', sans-serif;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.bp-cat-pill:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+}
+
+.bp-cat-pill.active {
+  background: rgba(56, 189, 248, 0.14);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+}
+
+.bp-solo-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  font: 700 0.72rem 'Chakra Petch', sans-serif;
+  padding: 4px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.bp-solo-btn:hover {
+  border-color: rgba(251, 191, 36, 0.4);
+  color: #fbbf24;
+}
+
+.bp-solo-btn.active {
+  background: rgba(251, 191, 36, 0.16);
+  border-color: #fbbf24;
+  color: #fbbf24;
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.3);
+}
+
+.bp-node-card.search-match {
+  border-color: #facc15;
+  box-shadow: 0 0 20px rgba(250, 204, 21, 0.5), 0 14px 34px rgba(0, 0, 0, 0.85);
+}
+
 /* Blueprint Nodes Layer */
 .bp-nodes-layer {
   position: absolute;
@@ -3226,25 +3339,75 @@ footer {
 
 .bp-node-card.active-node {
   border-color: #fbbf24;
-  box-shadow: 0 0 24px rgba(251, 191, 36, 0.55), 0 16px 40px rgba(0, 0, 0, 0.9);
-  z-index: 6;
+  box-shadow: 0 0 28px rgba(251, 191, 36, 0.65), 0 16px 40px rgba(0, 0, 0, 0.95);
+  z-index: 8;
+  opacity: 1 !important;
+  filter: none !important;
+  transform: scale(1.02);
 }
 
-.bp-node-card.connected-node {
-  border-color: rgba(56, 189, 248, 0.7);
-  box-shadow: 0 0 18px rgba(56, 189, 248, 0.3), 0 14px 34px rgba(0, 0, 0, 0.75);
-  opacity: 1;
-  z-index: 5;
+.bp-node-card.connected-target-node {
+  border-color: #f59e0b;
+  box-shadow: 0 0 22px rgba(245, 158, 11, 0.5), 0 14px 34px rgba(0, 0, 0, 0.85);
+  opacity: 1 !important;
+  filter: none !important;
+  z-index: 7;
+}
+
+.bp-node-card.connected-caller-node {
+  border-color: #38bdf8;
+  box-shadow: 0 0 22px rgba(56, 189, 248, 0.5), 0 14px 34px rgba(0, 0, 0, 0.85);
+  opacity: 1 !important;
+  filter: none !important;
+  z-index: 7;
 }
 
 .bp-node-card.dimmed-node {
-  opacity: 0.38;
-  filter: brightness(0.8);
+  opacity: 0.2 !important;
+  filter: grayscale(40%) brightness(0.65) !important;
 }
 
 .bp-node-card.dimmed-node:hover {
-  opacity: 0.95;
-  filter: brightness(1.05);
+  opacity: 0.95 !important;
+  filter: none !important;
+}
+
+.bp-connected-strip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font: 700 0.58rem 'Chakra Petch', sans-serif;
+  letter-spacing: 0.08em;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.bp-connected-strip.target-strip {
+  background: rgba(245, 158, 11, 0.18);
+  border-top-color: rgba(245, 158, 11, 0.45);
+  color: #fbbf24;
+}
+
+.bp-target-led {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fbbf24;
+  box-shadow: 0 0 6px #fbbf24;
+}
+
+.bp-connected-strip.caller-strip {
+  background: rgba(56, 189, 248, 0.18);
+  border-top-color: rgba(56, 189, 248, 0.45);
+  color: #38bdf8;
+}
+
+.bp-caller-led {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 6px #38bdf8;
 }
 
 .bp-node-header {
