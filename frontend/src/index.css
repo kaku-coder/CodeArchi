@@ -437,7 +437,11 @@ svg {
   stroke: #3a3c40;
   stroke-width: 2.2;
   stroke-linejoin: round;
-  transition: stroke .3s var(--d, 0s);
+  transition: stroke .3s var(--d, 0s), opacity .3s ease;
+}
+
+.pcbw.has-active .wire:not(.out):not(.in):not(.hit) {
+  opacity: 0.12;
 }
 
 .wire.out,
@@ -3158,6 +3162,41 @@ footer {
   animation: bpFlow 0.8s linear infinite;
 }
 
+.bp-spline-group {
+  transition: opacity 0.25s ease;
+}
+
+.bp-spline-group.bp-wire-active {
+  filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.65));
+}
+
+.bp-focus-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(251, 191, 36, 0.15);
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  color: #fbbf24;
+  font: 700 0.64rem 'Chakra Petch', sans-serif;
+  letter-spacing: 0.06em;
+  padding: 3px 9px;
+  border-radius: 999px;
+  animation: bpPillPulse 2s infinite ease-in-out;
+}
+
+.bp-focus-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fbbf24;
+  box-shadow: 0 0 7px #fbbf24;
+}
+
+@keyframes bpPillPulse {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.02); }
+}
+
 /* Blueprint Nodes Layer */
 .bp-nodes-layer {
   position: absolute;
@@ -3176,7 +3215,7 @@ footer {
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   cursor: pointer;
   user-select: none;
-  transition: box-shadow 0.18s ease, border-color 0.18s ease;
+  transition: box-shadow 0.18s ease, border-color 0.18s ease, opacity 0.25s ease, filter 0.25s ease;
   overflow: hidden;
 }
 
@@ -3187,7 +3226,25 @@ footer {
 
 .bp-node-card.active-node {
   border-color: #fbbf24;
-  box-shadow: 0 0 24px rgba(251, 191, 36, 0.5), 0 16px 40px rgba(0, 0, 0, 0.9);
+  box-shadow: 0 0 24px rgba(251, 191, 36, 0.55), 0 16px 40px rgba(0, 0, 0, 0.9);
+  z-index: 6;
+}
+
+.bp-node-card.connected-node {
+  border-color: rgba(56, 189, 248, 0.7);
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.3), 0 14px 34px rgba(0, 0, 0, 0.75);
+  opacity: 1;
+  z-index: 5;
+}
+
+.bp-node-card.dimmed-node {
+  opacity: 0.38;
+  filter: brightness(0.8);
+}
+
+.bp-node-card.dimmed-node:hover {
+  opacity: 0.95;
+  filter: brightness(1.05);
 }
 
 .bp-node-header {
@@ -3428,5 +3485,259 @@ footer {
   .org-conn-path {
     animation: none;
   }
+}
+
+/* ==========================================================================
+   Multi-Mode Ingestion Studio (GitHub URL, Local Folder, ZIP, Drag & Drop)
+   ========================================================================== */
+
+.upload-studio-box {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.ingest-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(15, 17, 23, 0.85);
+  padding: 5px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  flex-wrap: wrap;
+}
+
+.ingest-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #94a3b8;
+  font: 600 0.82rem 'Chakra Petch', sans-serif;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.ingest-tab:hover {
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.ingest-tab.active {
+  background: rgba(56, 189, 248, 0.14);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.35);
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.15);
+}
+
+.tab-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.ingest-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.url-input-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(18, 20, 28, 0.95);
+  border: 1.5px solid rgba(255, 255, 255, 0.14);
+  border-radius: 9px;
+  padding: 6px 10px 6px 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.url-input-group:focus-within {
+  border-color: #38bdf8;
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.25);
+}
+
+.url-prefix-icon {
+  color: #fbbf24;
+  font-size: 1.05rem;
+}
+
+.url-text-field {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #f1f5f9;
+  font: 500 0.88rem ui-monospace, Menlo, monospace;
+}
+
+.url-text-field::placeholder {
+  color: #64748b;
+  font-family: inherit;
+}
+
+.url-clear-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  color: #94a3b8;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all 0.15s ease;
+}
+
+.url-clear-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.quick-repos-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 4px 2px;
+}
+
+.quick-label {
+  font: 700 0.72rem 'Chakra Petch', sans-serif;
+  color: #94a3b8;
+  letter-spacing: 0.05em;
+}
+
+.quick-chip-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  font: 600 0.74rem ui-monospace, Menlo, monospace;
+  padding: 3px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.quick-chip-btn:hover {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+  transform: translateY(-1px);
+}
+
+.folder-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Universal Drag and Drop Area */
+.drop-area {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 28px;
+  background: rgba(16, 18, 25, 0.6);
+  border: 2px dashed rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  overflow: hidden;
+}
+
+.drop-area:hover,
+.drop-area.drag-active {
+  background: rgba(56, 189, 248, 0.06);
+  border-color: #38bdf8;
+  box-shadow: 0 0 24px rgba(56, 189, 248, 0.18);
+  transform: translateY(-1px);
+}
+
+.drop-area.busy-state {
+  cursor: wait;
+  border-color: #fbbf24;
+  background: rgba(251, 191, 36, 0.04);
+}
+
+.drop-indicator-icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.drop-text-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.drop-main-text {
+  font: 700 0.95rem 'Chakra Petch', sans-serif;
+  color: #f1f5f9;
+}
+
+.drop-sub-text {
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.busy-progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  width: 100%;
+  background: linear-gradient(90deg, #38bdf8, #fbbf24, #ec4899, #38bdf8);
+  background-size: 200% 100%;
+  animation: moveProgress 1.4s linear infinite;
+}
+
+@keyframes moveProgress {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+.upload-status-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font: 600 0.8rem ui-monospace, Menlo, monospace;
+}
+
+.upload-status-alert.done {
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  color: #4ade80;
+}
+
+.upload-status-alert.busy {
+  background: rgba(251, 191, 36, 0.12);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  color: #fbbf24;
+}
+
+.upload-status-alert.error {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #f87171;
+}
+
+.status-badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
 }
 

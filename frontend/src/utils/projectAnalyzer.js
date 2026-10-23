@@ -589,13 +589,11 @@ function mostConnected(edges) {
 }
 
 /**
- * Reads a ZIP archive and turns it into a CodeArchi project model:
- * files, dependency graph, detected stack, risks and a written summary.
+ * Core entry analyzer that turns raw file entries into a CodeArchi project model.
+ * Usable for ZIP archives, local folder directories, GitHub repositories, and URL downloads.
  */
-export async function analyzeZip(file) {
-  const { entries } = await readZipArchive(file);
-
-  const fileEntries = entries.filter((entry) => !entry.isDirectory && entry.path);
+export async function analyzeEntries(rawEntries, defaultProjectName = 'Project', source = 'upload') {
+  const fileEntries = rawEntries.filter((entry) => !entry.isDirectory && entry.path);
   const strippedPaths = stripCommonRoot(fileEntries.map((entry) => entry.path));
 
   const pathByEntry = new Map();
@@ -640,6 +638,11 @@ export async function analyzeZip(file) {
     const lang = detectLanguage(cleanPath);
     const binary = isBinaryPath(cleanPath);
 
+    if (entry.isOffListed) {
+      offFiles[cleanPath] = { note: 'Repository tree index (contents not loaded)', size: entry.size };
+      continue;
+    }
+
     if (binary) {
       offFiles[cleanPath] = { note: 'Binary file, listed but not read', size: entry.size };
       continue;
@@ -659,35 +662,35 @@ export async function analyzeZip(file) {
     try {
       content = await entry.readText();
     } catch {
-      offFiles[cleanPath] = { note: 'Could not be decompressed', size: entry.size };
+      offFiles[cleanPath] = { note: 'Could not be read', size: entry.size };
       continue;
     }
 
-    if (isProbablyBinary(content.slice(0, 2048))) {
+    if (content && isProbablyBinary(content.slice(0, 2048))) {
       offFiles[cleanPath] = { note: 'Binary content', size: entry.size };
       continue;
     }
 
     readBytes += entry.size;
 
-    const lines = content.split('\n');
+    const lines = (content || '').split('\n');
     const file = {
       path: cleanPath,
       lang: lang || 'Text',
       size: entry.size,
-      content,
+      content: content || '',
       lines: lines.length > MAX_LINES ? lines.slice(0, MAX_LINES) : lines
     };
 
     files.push(file);
     langByPath.set(cleanPath, file.lang);
 
-    const manifest = parseManifest(content, cleanPath);
+    const manifest = parseManifest(content || '', cleanPath);
     if (manifest) manifests.push(manifest);
 
     if (/readme\.mdx?$/i.test(cleanPath) && !readmeExcerpt) {
       readme = cleanPath;
-      readmeExcerpt = content
+      readmeExcerpt = (content || '')
         .replace(/```[\s\S]*?```/g, ' ')
         .replace(/[#*_>`]/g, ' ')
         .replace(/\s+/g, ' ')
@@ -741,7 +744,7 @@ export async function analyzeZip(file) {
   const projectName =
     nodeData.name ||
     (pythonManifest ? pythonManifest.data.name : '') ||
-    cleanProjectName(file.name.replace(/\.zip$/i, ''));
+    defaultProjectName;
 
   const description =
     nodeData.description ||
@@ -781,7 +784,7 @@ export async function analyzeZip(file) {
       : 'There is no package manifest or README description, so the shape was inferred from the code itself.'
   );
   paragraphs.push(
-    'The archive holds ' +
+    'The project holds ' +
       files.length +
       ' readable files (' +
       sourceFiles.length +
@@ -812,7 +815,7 @@ export async function analyzeZip(file) {
       ? tests.length === 1
         ? 'There is 1 test file, so the project has some automated coverage.'
         : 'There are ' + tests.length + ' test files, so the project has some automated coverage.'
-      : 'No test files were found, so this upload has no automated coverage.'
+      : 'No test files were found, so this project has no automated coverage.'
   );
 
   const facts = [
@@ -840,9 +843,9 @@ export async function analyzeZip(file) {
   };
 
   return buildProject({
-    id: 'upload-' + Date.now(),
+    id: 'proj-' + Date.now(),
     name: projectName,
-    source: 'upload',
+    source,
     files,
     offFiles,
     edges,
@@ -852,6 +855,221 @@ export async function analyzeZip(file) {
     readme,
     skipped
   });
+}
+
+/**
+ * Reads a ZIP archive and turns it into a CodeArchi project model.
+ */
+export async function analyzeZip(file) {
+  const { entries } = await readZipArchive(file);
+  const defaultName = cleanProjectName(file.name ? file.name.replace(/\.zip$/i, '') : 'ZIP Project');
+  return analyzeEntries(entries, defaultName, 'zip');
+}
+
+/**
+ * Reads a local folder (FileList from directory input or drag-and-drop) directly.
+ */
+export async function analyzeFolder(fileList, customName) {
+  const files = Array.from(fileList).filter((f) => f && f.name);
+  if (!files.length) {
+    throw new Error('No files found in folder.');
+  }
+
+  let folderName = customName;
+  if (!folderName) {
+    const firstRel = files[0].webkitRelativePath || files[0].name;
+    const parts = firstRel.split(/[\\/]/);
+    folderName = parts.length > 1 ? parts[0] : 'Uploaded Folder';
+  }
+
+  const rawEntries = files.map((file) => {
+    const relPath = (file.webkitRelativePath || file.name).replace(/\\/g, '/');
+    return {
+      path: relPath,
+      size: file.size,
+      isDirectory: false,
+      readText: () => file.text(),
+      readBinarySample: async () => {
+        const buf = await file.slice(0, 512).arrayBuffer();
+        return new Uint8Array(buf);
+      }
+    };
+  });
+
+  return analyzeEntries(rawEntries, cleanProjectName(folderName), 'folder');
+}
+
+/**
+ * Parses GitHub repository URL into { owner, repo, branch, subpath }
+ */
+export function parseGithubUrl(rawUrl) {
+  if (!rawUrl) return null;
+  let url = rawUrl.trim();
+  url = url.replace(/^(https?:\/\/)?(www\.)?github\.com\//i, '');
+  url = url.replace(/\.git$/i, '').replace(/^\/+|\/+$/g, '');
+
+  const parts = url.split('/');
+  if (parts.length >= 2) {
+    const owner = parts[0];
+    const repo = parts[1];
+    let branch = null;
+    let subpath = null;
+    if (parts[2] === 'tree' && parts[3]) {
+      branch = parts[3];
+      if (parts.length > 4) {
+        subpath = parts.slice(4).join('/');
+      }
+    }
+    return { owner, repo, branch, subpath };
+  }
+  return null;
+}
+
+/**
+ * Fetches and analyzes any public GitHub repository via GitHub REST & Raw APIs with CORS.
+ */
+export async function analyzeGithubRepo(rawUrl, onProgress = () => {}) {
+  const parsed = parseGithubUrl(rawUrl);
+  if (!parsed) {
+    throw new Error('Invalid GitHub URL. Use format: https://github.com/owner/repo or owner/repo');
+  }
+
+  const { owner, repo } = parsed;
+  onProgress(`Connecting to GitHub: ${owner}/${repo}...`);
+
+  // 1. Fetch repo metadata
+  let repoData;
+  try {
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}`);
+    if (res.status === 404) {
+      throw new Error(`Repository "${owner}/${repo}" was not found or is private.`);
+    }
+    if (res.status === 403) {
+      const data = await res.json().catch(() => ({}));
+      if (data.message && data.message.includes('API rate limit')) {
+        throw new Error('GitHub API rate limit exceeded on your IP. Please upload a ZIP or folder directly.');
+      }
+    }
+    if (!res.ok) {
+      throw new Error(`GitHub error: ${res.statusText} (${res.status})`);
+    }
+    repoData = await res.json();
+  } catch (err) {
+    if (err.message) throw err;
+    throw new Error(`Unable to reach GitHub for ${owner}/${repo}. Check your connection.`);
+  }
+
+  const branch = parsed.branch || repoData.default_branch || 'main';
+  onProgress(`Fetching file tree for branch "${branch}"...`);
+
+  // 2. Fetch Git Tree recursively
+  const treeRes = await fetch(
+    `https://api.github.com/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`
+  );
+  if (!treeRes.ok) {
+    throw new Error(`Could not load tree for branch "${branch}".`);
+  }
+  const treeData = await treeRes.json();
+  const allTreeItems = treeData.tree || [];
+
+  // Filter out ignored dirs, keep code files and manifests
+  const codeItems = allTreeItems.filter((item) => {
+    if (item.type !== 'blob') return false;
+    const path = item.path;
+    const segments = path.split('/');
+    if (segments.some((seg) => IGNORED_DIRS.has(seg))) return false;
+    const dot = path.lastIndexOf('.');
+    const ext = dot >= 0 ? path.slice(dot).toLowerCase() : '';
+    const isDoc = /readme(\.md|\.txt)?$/i.test(path) || path.endsWith('.json') || path.endsWith('.yaml') || path.endsWith('.yml');
+    return CODE_EXTS.includes(ext) || isDoc;
+  });
+
+  if (codeItems.length === 0) {
+    throw new Error(`No readable code files found in ${owner}/${repo}.`);
+  }
+
+  onProgress(`Found ${codeItems.length} code files. Fetching source contents...`);
+
+  // Sort: manifests and top files first
+  codeItems.sort((a, b) => {
+    const aPri = /package\.json|readme/i.test(a.path) ? 0 : 1;
+    const bPri = /package\.json|readme/i.test(b.path) ? 0 : 1;
+    return aPri - bPri;
+  });
+
+  const priorityItems = codeItems.slice(0, 100);
+  const BATCH_SIZE = 6;
+  const rawEntries = [];
+
+  for (let i = 0; i < priorityItems.length; i += BATCH_SIZE) {
+    const batch = priorityItems.slice(i, i + BATCH_SIZE);
+    onProgress(`Downloading files (${Math.min(i + BATCH_SIZE, priorityItems.length)} of ${priorityItems.length})...`);
+
+    const results = await Promise.all(
+      batch.map(async (item) => {
+        const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${item.path}`;
+        try {
+          const fileRes = await fetch(rawUrl);
+          if (!fileRes.ok) return null;
+          const text = await fileRes.text();
+          return {
+            path: item.path,
+            size: item.size || text.length,
+            isDirectory: false,
+            readText: async () => text,
+            readBinarySample: async () => null
+          };
+        } catch {
+          return null;
+        }
+      })
+    );
+
+    results.forEach((r) => {
+      if (r) rawEntries.push(r);
+    });
+  }
+
+  // Include remaining un-fetched files as listed entries
+  const fetchedPaths = new Set(rawEntries.map((e) => e.path));
+  codeItems.forEach((item) => {
+    if (!fetchedPaths.has(item.path)) {
+      rawEntries.push({
+        path: item.path,
+        size: item.size || 100,
+        isDirectory: false,
+        readText: async () => '',
+        readBinarySample: async () => null,
+        isOffListed: true
+      });
+    }
+  });
+
+  onProgress(`Analyzing architecture for ${repoData.name || repo}...`);
+  const projectName = cleanProjectName(repoData.name || repo);
+  return analyzeEntries(rawEntries, projectName, 'github');
+}
+
+/**
+ * Downloads a ZIP from direct URL and parses it
+ */
+export async function analyzeZipUrl(url, onProgress = () => {}) {
+  onProgress('Downloading project archive from URL...');
+  let res;
+  try {
+    res = await fetch(url);
+  } catch {
+    onProgress('Retrying via CORS bridge...');
+    res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
+  }
+
+  if (!res.ok) {
+    throw new Error(`Failed to download ZIP archive (HTTP ${res.status}).`);
+  }
+
+  const blob = await res.blob();
+  onProgress('Decompressing and parsing archive...');
+  return analyzeZip(blob);
 }
 
 function cleanProjectName(name) {

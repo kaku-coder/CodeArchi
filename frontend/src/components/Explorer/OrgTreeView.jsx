@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useProject } from '../../context/projectContext';
 import CodeViewer from './CodeViewer';
 
@@ -109,11 +109,12 @@ function buildNestedTree(entries, files) {
  * Group a file path into the folder that represents it at a given depth level.
  * level 1 -> top level folders, level 2 -> second level folders, and so on.
  */
-function groupOf(filePath, level) {
+function groupAtDepth(filePath, depth) {
   const parts = (filePath || '').replace(/\\/g, '/').split('/').filter(Boolean);
   if (parts.length <= 1) return '';
   const dirParts = parts.slice(0, -1);
-  return dirParts.slice(0, level).join('/');
+  if (dirParts.length < depth) return '';
+  return dirParts.slice(0, depth).join('/');
 }
 
 /**
@@ -253,10 +254,11 @@ function OrgTreeNode({
           className="org-node-header org-node-header-btn"
           onClick={handleFolderClick}
           aria-expanded={isOpen}
+          title={hasAny ? `${isOpen ? 'Collapse' : 'Open'} ${node.name}/` : node.name}
         >
           <div className="org-node-title-group">
             <span className={`org-expand-arrow ${isOpen ? 'open' : ''}`}>{hasAny ? '▸' : '•'}</span>
-            <span className="dir-folder-icon">📁</span>
+            <span className="dir-folder-icon">{isOpen && hasAny ? '📂' : '📁'}</span>
             <h4 className="org-node-title" title={node.path + '/'}>
               {node.name}/
             </h4>
@@ -524,19 +526,21 @@ export default function OrgTreeView({ selectedFile, onSelectFile }) {
     const available = container.clientWidth - 28;
     const next = Math.min(1.05, Math.max(0.45, available / contentWidth));
     setZoom(Math.round(next * 100) / 100);
+
+    requestAnimationFrame(() => {
+      const c = scrollContainerRef.current;
+      if (!c) return;
+      c.scrollLeft = Math.max(0, (c.scrollWidth - c.clientWidth) / 2);
+    });
   }, []);
 
   const handleFit = () => {
     autoFitRef.current = true;
     fitToWidth();
-    if (scrollContainerRef.current) {
-      const c = scrollContainerRef.current;
+    const c = scrollContainerRef.current;
+    if (c) {
       requestAnimationFrame(() => {
-        c.scrollTo({
-          left: Math.max(0, (c.scrollWidth - c.clientWidth) / 2),
-          top: 0,
-          behavior: 'smooth'
-        });
+        c.scrollTo({ left: Math.max(0, (c.scrollWidth - c.clientWidth) / 2), top: 0, behavior: 'smooth' });
       });
     }
   };
@@ -565,33 +569,45 @@ export default function OrgTreeView({ selectedFile, onSelectFile }) {
 
     const nested = buildNestedTree(entries, files);
 
-    // Folder-to-folder connections derived from the import graph, grouped by depth level
+    // Folder-to-folder connections derived from the import graph. Connections
+    // are accumulated for every directory depth so any folder the user drills
+    // into can reveal the folders it talks to.
+    let maxDepth = 1;
+    entries.forEach((entry) => {
+      const parts = (entry.path || '').replace(/\\/g, '/').split('/').filter(Boolean);
+      maxDepth = Math.max(maxDepth, Math.max(1, parts.length - 1));
+    });
+
     const connMap = new Map();
     const pairMap = new Map();
 
-    edges.forEach((edge) => {
-      const from = edge[0];
-      const to = edge[1];
-      if (!from || !to) return;
+    const addLink = (self, other) => {
+      if (!connMap.has(self)) connMap.set(self, new Map());
+      const bucket = connMap.get(self);
+      bucket.set(other, (bucket.get(other) || 0) + 1);
+    };
 
-      const fromKey = groupOf(from, linkLevel);
-      const toKey = groupOf(to, linkLevel);
-      if (!fromKey || !toKey || fromKey === toKey) return;
+    for (let depth = 1; depth <= maxDepth; depth++) {
+      edges.forEach((edge) => {
+        const from = edge[0];
+        const to = edge[1];
+        if (!from || !to) return;
 
-      const a = fromKey < toKey ? fromKey : toKey;
-      const b = fromKey < toKey ? toKey : fromKey;
-      const key = a + '::' + b;
+        const fromKey = groupAtDepth(from, depth);
+        const toKey = groupAtDepth(to, depth);
+        if (!fromKey || !toKey || fromKey === toKey) return;
 
-      pairMap.set(key, { a, b, count: (pairMap.get(key)?.count || 0) + 1 });
+        addLink(fromKey, toKey);
+        addLink(toKey, fromKey);
 
-      const addLink = (self, other) => {
-        if (!connMap.has(self)) connMap.set(self, new Map());
-        const bucket = connMap.get(self);
-        bucket.set(other, (bucket.get(other) || 0) + 1);
-      };
-      addLink(fromKey, toKey);
-      addLink(toKey, fromKey);
-    });
+        if (depth !== linkLevel) return;
+
+        const a = fromKey < toKey ? fromKey : toKey;
+        const b = fromKey < toKey ? toKey : fromKey;
+        const key = a + '::' + b;
+        pairMap.set(key, { a, b, count: (pairMap.get(key)?.count || 0) + 1 });
+      });
+    }
 
     const connections = new Map();
     connMap.forEach((bucket, selfPath) => {
@@ -603,20 +619,12 @@ export default function OrgTreeView({ selectedFile, onSelectFile }) {
       );
     });
 
-    // File level edges, kept for the drilldown of a single folder
-    const fileEdges = edges.map(([from, to]) => ({
-      from,
-      to,
-      fromGroup: groupOf(from, linkLevel),
-      toGroup: groupOf(to, linkLevel)
-    }));
-
     return {
       rootName: project.name || 'Project Root',
       nested,
       connections,
       pairMap,
-      fileEdges,
+      edges,
       totalFiles: entries.length,
       totalLines: totalProjectLines,
       totalEdges: edges.length,
@@ -624,26 +632,24 @@ export default function OrgTreeView({ selectedFile, onSelectFile }) {
     };
   }, [project, linkLevel]);
 
-  const levelPaths = useMemo(() => {
+  const allFolderPaths = useMemo(() => {
     const paths = [];
-    const walk = (node, depth) => {
-      if (depth >= linkLevel) return;
+    const walk = (node) => {
       node.children.forEach((child) => {
         paths.push(child.path);
-        walk(child, depth + 1);
+        walk(child);
       });
     };
-    walk(treeData.nested, 0);
+    walk(treeData.nested);
     return paths;
-  }, [treeData.nested, linkLevel]);
+  }, [treeData.nested]);
 
-  // Effective expansion: auto paths (needed to reveal the link level) plus manual overrides
+  // Every folder starts collapsed: clicking one drills into its children.
   const expanded = useMemo(() => {
-    const set = new Set(levelPaths);
-    manual.open.forEach((p) => set.add(p));
+    const set = new Set(manual.open);
     manual.closed.forEach((p) => set.delete(p));
     return set;
-  }, [levelPaths, manual]);
+  }, [manual]);
 
   const toggle = (path) => {
     setManual((prev) => {
@@ -661,21 +667,12 @@ export default function OrgTreeView({ selectedFile, onSelectFile }) {
   };
 
   const toggleAll = () => {
-    setManual((prev) => {
-      const open = new Set(prev.open);
-      const closed = new Set(prev.closed);
-      const allOpen = levelPaths.every((p) => expanded.has(p));
-      levelPaths.forEach((p) => {
-        if (allOpen) {
-          closed.add(p);
-          open.delete(p);
-        } else {
-          open.add(p);
-          closed.delete(p);
-        }
-      });
-      return { open: [...open], closed: [...closed] };
-    });
+    const allOpen = allFolderPaths.length > 0 && allFolderPaths.every((p) => expanded.has(p));
+    setManual(
+      allOpen
+        ? { open: [], closed: [...allFolderPaths] }
+        : { open: [...allFolderPaths], closed: [] }
+    );
   };
 
   const activeLinks = useMemo(
@@ -683,12 +680,32 @@ export default function OrgTreeView({ selectedFile, onSelectFile }) {
     [activeFolder, treeData.connections]
   );
 
+  const activePairMap = useMemo(() => {
+    if (!activeFolder) return null;
+
+    const pairs = new Map();
+    activeLinks.forEach((link) => {
+      const a = activeFolder < link.path ? activeFolder : link.path;
+      const b = activeFolder < link.path ? link.path : activeFolder;
+      const key = a + '::' + b;
+      const current = pairs.get(key);
+      pairs.set(key, { a, b, count: (current?.count || 0) + link.count });
+    });
+    return pairs;
+  }, [activeFolder, activeLinks]);
+
   const activeEdgeList = useMemo(() => {
     if (!activeFolder) return [];
-    return treeData.fileEdges.filter(
-      (e) => e.fromGroup === activeFolder || e.toGroup === activeFolder
-    );
-  }, [activeFolder, treeData.fileEdges]);
+
+    const depth = activeFolder.split('/').filter(Boolean).length;
+    return treeData.edges
+      .filter(([from, to]) => {
+        const fromGroup = groupAtDepth(from, depth);
+        const toGroup = groupAtDepth(to, depth);
+        return fromGroup === activeFolder || toGroup === activeFolder;
+      })
+      .map(([from, to]) => ({ from, to }));
+  }, [activeFolder, treeData.edges]);
 
   const updateConnections = useCallback(() => {
     if (!showConnections) {
@@ -698,7 +715,7 @@ export default function OrgTreeView({ selectedFile, onSelectFile }) {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const pairs = treeData.pairMap;
+    const pairs = activeFolder ? activePairMap : treeData.pairMap;
     if (!pairs || pairs.size === 0) {
       setLines([]);
       return;
@@ -717,36 +734,46 @@ export default function OrgTreeView({ selectedFile, onSelectFile }) {
       const b = offsetInCanvas(elB, canvas);
       if (!a || !b) return;
 
-      const x1 = a.x + a.width / 2;
-      const y1 = a.y + a.height / 2;
-      const x2 = b.x + b.width / 2;
-      const y2 = b.y + b.height / 2;
+      const cx1 = a.x + a.width / 2;
+      const cy1 = a.y + a.height / 2;
+      const cx2 = b.x + b.width / 2;
+      const cy2 = b.y + b.height / 2;
 
       let d;
       let labelX;
       let labelY;
+      let x1;
+      let y1;
+      let x2;
+      let y2;
 
-      if (Math.abs(x1 - x2) < 70) {
+      if (Math.abs(cx1 - cx2) < 70) {
         // Stacked vertically: route the wire as a bracket off the right edge
-        const ax = a.x + a.width;
-        const bx = b.x + b.width;
-        const sideX = Math.max(ax, bx) + 22;
-        d = `M ${ax} ${y1} C ${sideX} ${y1}, ${sideX} ${y2}, ${bx} ${y2}`;
+        x1 = a.x + a.width;
+        y1 = cy1;
+        x2 = b.x + b.width;
+        y2 = cy2;
+        const sideX = Math.max(x1, x2) + 22;
+        d = `M ${x1} ${y1} C ${sideX} ${y1}, ${sideX} ${y2}, ${x2} ${y2}`;
         labelX = sideX;
         labelY = (y1 + y2) / 2;
       } else {
-        // Side by side: arch the wire above the cards
-        const midY = Math.min(y1, y2) - 70;
-        d = `M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`;
+        // Side by side: attach to the top edges and arch above the cards
+        x1 = cx1;
+        y1 = a.y;
+        x2 = cx2;
+        y2 = b.y;
+        const archY = Math.min(y1, y2) - 56;
+        d = `M ${x1} ${y1} C ${x1} ${archY}, ${x2} ${archY}, ${x2} ${y2}`;
         labelX = (x1 + x2) / 2;
-        labelY = midY + 14;
+        labelY = archY + 14;
       }
 
       result.push({ key, d, x1, y1, x2, y2, labelX, labelY, count: pair.count, a: pair.a, b: pair.b });
     });
 
     setLines(result);
-  }, [showConnections, treeData.pairMap, expanded]);
+  }, [showConnections, activeFolder, activePairMap, treeData.pairMap, expanded]);
 
   useEffect(() => {
     const raf = requestAnimationFrame(updateConnections);
@@ -955,7 +982,7 @@ export default function OrgTreeView({ selectedFile, onSelectFile }) {
                 type="button"
                 className="org-node-header org-node-header-btn root-toggle-btn"
                 onClick={toggleAll}
-                title="Expand or collapse every top-level folder"
+                title="Expand or collapse every folder"
               >
                 <div className="org-node-title-group">
                   <span className="root-pill-badge">ROOT MODULE</span>
@@ -1025,7 +1052,7 @@ export default function OrgTreeView({ selectedFile, onSelectFile }) {
 
           {activeLinks.length === 0 ? (
             <p className="folder-detail-empty">
-              Is folder ka koi cross-folder import nahi he. Level L{linkLevel} par kuch bhi connected nahi.
+              Is folder ka is level par koi cross-folder import nahi mila. Folder kholke aur andar dekho.
             </p>
           ) : (
             <>

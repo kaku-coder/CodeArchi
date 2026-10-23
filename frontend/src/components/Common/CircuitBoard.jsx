@@ -137,7 +137,7 @@ const CircuitBoard = forwardRef(function CircuitBoard(
         </div>
       </div>
 
-      <div className={`pcbw ${view3d ? 'is3d' : 'is2d'}`}>
+      <div className={`pcbw ${view3d ? 'is3d' : 'is2d'} ${activeKeys.length ? 'has-active' : ''}`}>
         <svg
           ref={svgRef}
           id={id}
