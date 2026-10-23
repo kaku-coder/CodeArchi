@@ -1,3 +1,4 @@
+import { useAuth } from '../../context/authContext';
 
 const PAGES = [
   { id: 'home', name: 'Home' },
@@ -8,7 +9,23 @@ const PAGES = [
   { id: 'insights', name: 'AI Insights' }
 ];
 
+function initialsOf(name) {
+  return String(name || '?')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0].toUpperCase())
+    .join('');
+}
+
 export default function Header({ activePage, onSelectPage }) {
+  const { user, logout } = useAuth();
+
+  const handleSignOut = () => {
+    logout();
+    onSelectPage('home');
+  };
+
   return (
     <header>
       <div
@@ -37,6 +54,33 @@ export default function Header({ activePage, onSelectPage }) {
           );
         })}
       </nav>
+
+      <div className="header-auth">
+        {user ? (
+          <>
+            <button
+              type="button"
+              className={`header-user ${activePage === 'auth' ? 'is-active' : ''}`}
+              onClick={() => onSelectPage('auth')}
+              title="Open your account"
+            >
+              <span className="header-avatar">{initialsOf(user.name)}</span>
+              <span className="header-user-name">{user.name}</span>
+            </button>
+            <button type="button" className="key header-signout" onClick={handleSignOut}>
+              Sign Out
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            className={`key ${activePage === 'auth' ? 'hot' : ''}`}
+            onClick={() => onSelectPage('auth')}
+          >
+            Sign In
+          </button>
+        )}
+      </div>
     </header>
   );
 }

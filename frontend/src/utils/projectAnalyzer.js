@@ -601,7 +601,7 @@ export async function analyzeEntries(rawEntries, defaultProjectName = 'Project',
     pathByEntry.set(entry, normalizePath(strippedPaths[index]));
   });
 
-  const kept = [];
+  const candidates = [];
   let skipped = 0;
 
   fileEntries.forEach((entry) => {
@@ -611,12 +611,36 @@ export async function analyzeEntries(rawEntries, defaultProjectName = 'Project',
       skipped++;
       return;
     }
-    if (kept.length >= MAX_FILES) {
-      skipped++;
-      return;
-    }
-    kept.push(entry);
+    candidates.push(entry);
   });
+
+  // Pick files fairly across top-level folders so one huge folder (for example
+  // backend) cannot use the whole limit and hide another folder (for example
+  // frontend) from the tree.
+  let kept = candidates;
+  if (candidates.length > MAX_FILES) {
+    const buckets = new Map();
+    candidates.forEach((entry) => {
+      const root = pathByEntry.get(entry).split('/')[0];
+      if (!buckets.has(root)) buckets.set(root, []);
+      buckets.get(root).push(entry);
+    });
+
+    const roots = Array.from(buckets.keys());
+    kept = [];
+    while (kept.length < MAX_FILES) {
+      let added = false;
+      for (const root of roots) {
+        const bucket = buckets.get(root);
+        if (!bucket.length) continue;
+        kept.push(bucket.shift());
+        added = true;
+        if (kept.length >= MAX_FILES) break;
+      }
+      if (!added) break;
+    }
+    skipped += candidates.length - kept.length;
+  }
 
   const pathSet = new Set(kept.map((entry) => pathByEntry.get(entry)));
   const suffixIndex = buildSuffixIndex(pathSet);
@@ -956,7 +980,9 @@ export async function analyzeGithubRepo(rawUrl, onProgress = () => {}) {
     repoData = await res.json();
   } catch (err) {
     if (err.message) throw err;
-    throw new Error(`Unable to reach GitHub for ${owner}/${repo}. Check your connection.`);
+    throw new Error(`Unable to reach GitHub for ${owner}/${repo}. Check your connection.`, {
+      cause: err
+    });
   }
 
   const branch = parsed.branch || repoData.default_branch || 'main';

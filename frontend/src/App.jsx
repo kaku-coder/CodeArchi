@@ -1,9 +1,9 @@
 import { useState, useRef, useCallback } from 'react';
 import Header from './components/Header/Header';
 import LaptopScene from './components/Laptop/LaptopScene';
-import FileTree from './components/Explorer/FileTree';
-import CodeViewer from './components/Explorer/CodeViewer';
+import ProjectMap from './components/Explorer/ProjectMap';
 import UploadPanel from './components/Explorer/UploadPanel';
+import AuthPage from './components/Auth/AuthPage';
 import ProjectSummary from './components/Explorer/ProjectSummary';
 import ProjectChip from './components/Common/ProjectChip';
 import ProjectRisks from './components/FailureAnalysis/ProjectRisks';
@@ -182,6 +182,9 @@ export default function App() {
         onSelectPage={handleSelectPage}
       />
 
+      {/* PAGE: Login / Create Account / Account */}
+      {activePage === 'auth' && <AuthPage onNavigate={handleSelectPage} />}
+
       {/* PAGE 1: 3D Studio / Home */}
       {activePage === 'home' && (
         <LaptopScene
@@ -217,7 +220,9 @@ export default function App() {
             </span>
             <h1>Open any project and see what is inside.</h1>
             <p>
-              Upload a ZIP or connect a supported repository. CodeArchi lists every file and folder, marks which ones it can read, and lets you view the content in high resolution.
+              Upload a ZIP or connect a supported repository. Every top-level folder is listed
+              together, so you can see frontend and backend side by side, then open any file in
+              large, readable text.
             </p>
           </div>
 
@@ -231,22 +236,11 @@ export default function App() {
           </div>
 
           <div className="panel unit" style={{ padding: '24px', marginTop: '24px' }}>
-            <div
-              className="explorer"
-              style={{
-                gridTemplateColumns: 'minmax(240px, 280px) minmax(0, 1fr)',
-                gap: '24px'
-              }}
-            >
-              <FileTree
-                selectedFile={selectedFile}
-                onSelectFile={setSelectedFile}
-              />
-              <CodeViewer
-                selectedFile={selectedFile}
-                onUpdateFileCode={handleUpdateFileCode}
-              />
-            </div>
+            <ProjectMap
+              selectedFile={selectedFile}
+              onSelectFile={setSelectedFile}
+              onUpdateFileCode={handleUpdateFileCode}
+            />
           </div>
         </div>
       )}

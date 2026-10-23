@@ -1,6 +1,4 @@
-import React from 'react';
-import FileTree from './FileTree';
-import CodeViewer from './CodeViewer';
+import ProjectMap from './ProjectMap';
 
 export default function CodeExplorer({ selectedFile, onSelectFile, isSlide = false }) {
   const content = (
@@ -11,19 +9,21 @@ export default function CodeExplorer({ selectedFile, onSelectFile, isSlide = fal
         </span>
         <h2>Open any project and see what is inside.</h2>
         <p>
-          Upload a ZIP or connect a supported repository. CodeArchi lists every file and folder, marks which ones it can read, and lets you view the content.
+          Upload a ZIP or connect a supported repository. Every top-level folder is visible at
+          once, and files open in large, readable text.
         </p>
         <ul>
-          <li>Browse folders and files in a tree.</li>
-          <li>Source files it supports are identified by language.</li>
-          <li>Files it cannot analyze, like images, are marked clearly.</li>
+          <li>Folders are open at the top level, so frontend and backend both show.</li>
+          <li>Search any file or folder by name.</li>
+          <li>Select a file to read its code and see its imports.</li>
         </ul>
       </div>
       <div className="panel unit">
-        <div className="explorer">
-          <FileTree selectedFile={selectedFile} onSelectFile={onSelectFile} />
-          <CodeViewer selectedFile={selectedFile} />
-        </div>
+        <ProjectMap
+          selectedFile={selectedFile}
+          onSelectFile={onSelectFile}
+          compact
+        />
       </div>
     </>
   );
