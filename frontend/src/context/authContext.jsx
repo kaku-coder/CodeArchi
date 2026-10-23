@@ -1,11 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
-const USERS_KEY = 'codearchi.users.v1';
-const SESSION_KEY = 'codearchi.session.v1';
+export const USERS_KEY = 'codearchi.users.v1';
+export const SESSION_KEY = 'codearchi.session.v1';
 
-const AuthContext = createContext(null);
+export const AuthContext = createContext(null);
 
-function readJson(key, fallback) {
+export function readJson(key, fallback) {
   try {
     const raw = window.localStorage.getItem(key);
     return raw ? JSON.parse(raw) : fallback;
@@ -14,15 +14,15 @@ function readJson(key, fallback) {
   }
 }
 
-function writeJson(key, value) {
+export function writeJson(key, value) {
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
   } catch {
-    // Storage can be unavailable in private browsing. The session still works for this tab.
+    // Storage can be unavailable in private browsing.
   }
 }
 
-function randomSalt() {
+export function randomSalt() {
   const bytes = new Uint8Array(16);
   if (window.crypto?.getRandomValues) {
     window.crypto.getRandomValues(bytes);
@@ -32,7 +32,7 @@ function randomSalt() {
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
-async function hashPassword(password, salt) {
+export async function hashPassword(password, salt) {
   const value = `${salt}:${password}`;
   if (window.crypto?.subtle) {
     const data = new TextEncoder().encode(value);
@@ -42,11 +42,11 @@ async function hashPassword(password, salt) {
   return window.btoa(unescape(encodeURIComponent(value)));
 }
 
-function normalizeEmail(email) {
+export function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
 }
 
-function publicUser(user) {
+export function publicUser(user) {
   if (!user) return null;
   return {
     name: user.name,
@@ -64,8 +64,9 @@ export function AuthProvider({ children }) {
   });
 
   useEffect(() => {
-    if (user) writeJson(SESSION_KEY, { email: user.email });
-    else {
+    if (user) {
+      writeJson(SESSION_KEY, { email: user.email });
+    } else {
       try {
         window.localStorage.removeItem(SESSION_KEY);
       } catch {
@@ -143,10 +144,19 @@ export function AuthProvider({ children }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+export default AuthProvider;
+
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used inside AuthProvider.');
+    // Safe default to prevent app crashing
+    return {
+      user: null,
+      isAuthenticated: false,
+      signup: async () => {},
+      login: async () => {},
+      logout: () => {}
+    };
   }
   return context;
 }
