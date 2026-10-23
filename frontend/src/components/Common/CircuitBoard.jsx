@@ -147,14 +147,21 @@ const CircuitBoard = forwardRef(function CircuitBoard(
           aria-label={mode === 'deps' ? 'Dependency graph' : 'Impact graph'}
         >
           <defs>
+            {/* Blueprint Grid Pattern */}
             <pattern
               id={patternId}
-              width="14"
-              height="14"
+              width="18"
+              height="18"
               patternUnits="userSpaceOnUse"
             >
-              <circle cx="7" cy="7" r="1" fill="#2e3033" />
+              <line x1="0" y1="0" x2="18" y2="0" stroke="rgba(56, 189, 248, 0.08)" strokeWidth="0.8" />
+              <line x1="0" y1="0" x2="0" y2="18" stroke="rgba(56, 189, 248, 0.08)" strokeWidth="0.8" />
+              <circle cx="9" cy="9" r="0.7" fill="rgba(56, 189, 248, 0.16)" />
             </pattern>
+            <filter id={`bp_glow_${id}`} x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
           </defs>
 
           {view3d ? (
@@ -166,20 +173,20 @@ const CircuitBoard = forwardRef(function CircuitBoard(
                     width="470"
                     height="290"
                     rx="14"
-                    fill="#0b0b0c"
-                    stroke="#2a2b2e"
+                    fill="#060910"
+                    stroke="rgba(56, 189, 248, 0.15)"
                   />
                 </g>
               </g>
 
-              {/* Main PCB board */}
+              {/* Main Blueprint board */}
               <g transform={MX_TRANSFORM}>
                 <rect
                   width="470"
                   height="290"
                   rx="14"
-                  fill="#18191b"
-                  stroke="#38393d"
+                  fill="#0b0f19"
+                  stroke="rgba(56, 189, 248, 0.35)"
                   strokeWidth="1.5"
                 />
                 <rect
@@ -191,33 +198,36 @@ const CircuitBoard = forwardRef(function CircuitBoard(
                 <text
                   x="14"
                   y="16"
-                  fontSize="8"
-                  fill="#6b6d73"
-                  fontFamily="Chakra Petch, sans-serif"
+                  fontSize="7.8"
+                  fontWeight="600"
+                  fill="#38bdf8"
+                  fontFamily="'Chakra Petch', sans-serif"
+                  letterSpacing="0.06em"
                 >
-                  signal flows from the imported file to the file that imports it
+                  ⚡ BLUEPRINT CIRCUIT FLOW • CLICK ANY FILE TO TRACE CONNECTIONS
                 </text>
 
-                {/* Wires */}
+                {/* Curved Blueprint Connecting Wires */}
                 {boardEdges.map((e, i) => {
                   const a = coords[e[1]];
                   const b = coords[e[0]];
-                  const ex = board.elbows[i];
-                  const d = `M${a[0] + 47} ${a[1]}H${ex}V${b[1]}H${b[0] - 47}`;
+                  const dx = Math.max(26, Math.abs(b[0] - a[0]) * 0.45);
+                  const d = `M${a[0] + 47} ${a[1]} C${a[0] + 47 + dx} ${a[1]}, ${b[0] - 47 - dx} ${b[1]}, ${b[0] - 47} ${b[1]}`;
                   const wClass = wireClasses[i] || '';
                   const delay = wireDelays[i] || 0;
 
                   return (
                     <path
                       key={`wire-${i}`}
-                      className={`wire ${wClass}`}
+                      className={`wire bp-wire ${wClass}`}
                       d={d}
+                      filter={wClass ? `url(#bp_glow_${id})` : undefined}
                       style={delay ? { '--d': `${delay}s` } : undefined}
                     />
                   );
                 })}
 
-                {/* IC Chips */}
+                {/* Clean Blueprint File Nodes */}
                 {Object.keys(coords).map((k) => {
                   const [x, y] = coords[k];
                   const parts = k.split('/');
@@ -226,15 +236,19 @@ const CircuitBoard = forwardRef(function CircuitBoard(
                     ? 'on'
                     : nodeClasses[k] || (activeKeys.length ? 'dim' : '');
                   const delay = nodeDelays[k] || 0;
+                  const fileName = parts[parts.length - 1];
+                  const dirName = parts.length > 1 ? parts[parts.length - 2] : '';
+                  const dispName = formatChipName(fileName, 20);
+                  const dispDir = formatChipDir(dirName, 16);
 
                   return (
                     <g
                       key={k}
-                      className={`ic ${nodeClass}`}
+                      className={`bp-file-node ${nodeClass}`}
                       data-k={k}
                       tabIndex={0}
-                      role="switch"
-                      aria-checked={isTurnedOn}
+                      role="button"
+                      aria-pressed={isTurnedOn}
                       aria-label={k}
                       style={delay ? { '--d': `${delay}s` } : undefined}
                       onClick={() => onToggleNode(k)}
@@ -245,80 +259,67 @@ const CircuitBoard = forwardRef(function CircuitBoard(
                         }
                       }}
                     >
-                      {/* IC Pins */}
-                      {[0, 1, 2, 3, 4].map((pIdx) => (
-                        <g key={pIdx}>
-                          <rect
-                            className="pin"
-                            x={x - 34 + pIdx * 17}
-                            y={y - 23}
-                            width="6"
-                            height="4"
-                          />
-                          <rect
-                            className="pin"
-                            x={x - 34 + pIdx * 17}
-                            y={y + 19}
-                            width="6"
-                            height="4"
-                          />
-                        </g>
-                      ))}
+                      <title>{k}</title>
 
+                      {/* Card Drop Shadow */}
                       <rect
-                        className="shadow"
+                        className="bp-node-shadow"
                         x={x - 45}
                         y={y - 17}
                         width="94"
-                        height="38"
-                        rx="5"
+                        height="36"
+                        rx="6"
                       />
+
+                      {/* Card Main Body */}
                       <rect
-                        className="body"
+                        className="bp-node-body"
                         x={x - 47}
                         y={y - 19}
                         width="94"
-                        height="38"
-                        rx="5"
+                        height="36"
+                        rx="6"
                       />
-                      <title>{k}</title>
-                      <text
-                        className="dir"
-                        x={x}
-                        y={y - 7}
-                        textAnchor="middle"
-                      >
-                        {formatChipDir(parts.length > 1 ? parts[parts.length - 2] : '', 16)}
-                      </text>
-                      <text
-                        className="nm"
-                        x={x}
-                        y={y + 5}
-                        textAnchor="middle"
-                      >
-                        {formatChipName(parts[parts.length - 1], 20)}
-                      </text>
+
+                      {/* Top Accent Strip */}
+                      <rect
+                        className="bp-node-accent"
+                        x={x - 47}
+                        y={y - 19}
+                        width="94"
+                        height="3.5"
+                        rx="1.5"
+                      />
+
+                      {/* Connection Ports (Left = In, Right = Out) */}
+                      <circle className="bp-port in" cx={x - 47} cy={y} r="2.6" />
+                      <circle className="bp-port out" cx={x + 47} cy={y} r="2.6" />
+
+                      {/* Status Lamp LED */}
                       <circle
                         className="lamp"
                         cx={x + 36}
-                        cy={y - 10}
-                        r="3"
+                        cy={y - 9}
+                        r="2.4"
                       />
-                      {/* Integrated Switch inside the chip */}
-                      <rect
-                        className="trk"
-                        x={x - 13}
-                        y={y + 9}
-                        width="26"
-                        height="7"
-                        rx="3.5"
-                      />
-                      <circle
-                        className="knob"
-                        cx={isTurnedOn ? x + 7 : x - 7}
-                        cy={y + 12.5}
-                        r="2.6"
-                      />
+
+                      {/* Directory Path */}
+                      <text
+                        className="bp-dir-text"
+                        x={x - 40}
+                        y={y - 5}
+                      >
+                        {dispDir}
+                      </text>
+
+                      {/* File Name */}
+                      <text
+                        className="bp-nm-text"
+                        x={x - 40}
+                        y={y + 8}
+                      >
+                        {dispName}
+                      </text>
                     </g>
                   );
                 })}
@@ -330,9 +331,9 @@ const CircuitBoard = forwardRef(function CircuitBoard(
                 width="480"
                 height="266"
                 rx="12"
-                fill="#151617"
-                stroke="#38393d"
-                strokeWidth="1.2"
+                fill="#0b0f19"
+                stroke="rgba(56, 189, 248, 0.35)"
+                strokeWidth="1.5"
               />
               <rect
                 width="480"
@@ -341,37 +342,41 @@ const CircuitBoard = forwardRef(function CircuitBoard(
                 fill={`url(#${patternId})`}
               />
               <g className="pcb-header-note" transform="translate(18, 12)">
-                <circle cx="4" cy="5" r="2.8" fill="#a855f7" />
+                <circle cx="4" cy="5" r="2.8" fill="#38bdf8" />
                 <text
                   x="12"
                   y="8"
                   fontSize="7.8"
                   fontWeight="600"
-                  fill="#94a3b8"
+                  fill="#38bdf8"
                   fontFamily="'Chakra Petch', sans-serif"
-                  letterSpacing="0.05em"
+                  letterSpacing="0.06em"
                 >
-                  CIRCUIT TRACE • FLIP ANY IC SWITCH TO TRACE IMPORTS & CALLERS
+                  ⚡ BLUEPRINT CIRCUIT FLOW • CLICK ANY FILE TO TRACE CONNECTIONS
                 </text>
               </g>
 
+              {/* Curved Blueprint Connecting Wires (2D) */}
               {boardEdges.map((e, i) => {
                 const a = coords[e[1]];
                 const b = coords[e[0]];
+                const dx = Math.max(26, Math.abs(b[0] - a[0]) * 0.45);
+                const d = `M${a[0] + 47} ${a[1]} C${a[0] + 47 + dx} ${a[1]}, ${b[0] - 47 - dx} ${b[1]}, ${b[0] - 47} ${b[1]}`;
                 const wClass = wireClasses[i] || '';
                 const delay = wireDelays[i] || 0;
-                const d = `M${a[0]} ${a[1]}H${(a[0] + b[0]) / 2}V${b[1]}H${b[0]}`;
 
                 return (
                   <path
                     key={`wire2-${i}`}
-                    className={`wire flat ${wClass}`}
+                    className={`wire flat bp-wire ${wClass}`}
                     d={d}
+                    filter={wClass ? `url(#bp_glow_${id})` : undefined}
                     style={delay ? { '--d': `${delay}s` } : undefined}
                   />
                 );
               })}
 
+              {/* Clean Blueprint File Nodes (2D) */}
               {Object.keys(coords).map((k) => {
                 const [x, y] = coords[k];
                 const parts = k.split('/');
@@ -388,11 +393,11 @@ const CircuitBoard = forwardRef(function CircuitBoard(
                 return (
                   <g
                     key={`flat-${k}`}
-                    className={`ic flat ${nodeClass}`}
+                    className={`bp-file-node flat ${nodeClass}`}
                     data-k={k}
                     tabIndex={0}
-                    role="switch"
-                    aria-checked={isTurnedOn}
+                    role="button"
+                    aria-pressed={isTurnedOn}
                     aria-label={k}
                     style={delay ? { '--d': `${delay}s` } : undefined}
                     onClick={() => onToggleNode(k)}
@@ -405,36 +410,34 @@ const CircuitBoard = forwardRef(function CircuitBoard(
                     transform={`translate(${x - 47}, ${y - 19})`}
                   >
                     <title>{k}</title>
-                    {/* IC Pins top & bottom */}
-                    {[0, 1, 2, 3, 4].map((pIdx) => (
-                      <g key={pIdx}>
-                        <rect className="pin" x={15 + pIdx * 16} y={-4} width="5" height="4" />
-                        <rect className="pin" x={15 + pIdx * 16} y={38} width="5" height="4" />
-                      </g>
-                    ))}
 
-                    <rect className="shadow" x="2" y="2" width="94" height="38" rx="5" />
-                    <rect className="body" x="0" y="0" width="94" height="38" rx="5" />
+                    {/* Card Drop Shadow */}
+                    <rect className="bp-node-shadow" x="2" y="2" width="94" height="36" rx="6" />
+
+                    {/* Card Body */}
+                    <rect className="bp-node-body" x="0" y="0" width="94" height="36" rx="6" />
+
+                    {/* Top Accent Strip */}
+                    <rect className="bp-node-accent" x="0" y="0" width="94" height="3.5" rx="1.5" />
+
+                    {/* Connection Ports */}
+                    <circle className="bp-port in" cx="0" cy="18" r="2.6" />
+                    <circle className="bp-port out" cx="94" cy="18" r="2.6" />
 
                     {/* Status Lamp LED */}
-                    <circle className="lamp" cx="83" cy="8" r="2.8" />
+                    <circle className="lamp" cx="83" cy="9" r="2.4" />
 
                     {/* Labels */}
-                    <text className="dir" x="47" y="11" textAnchor="middle">
+                    <text className="bp-dir-text" x="8" y="13">
                       {dispDir}
                     </text>
                     <text
-                      className="nm"
-                      x="47"
-                      y="22"
-                      textAnchor="middle"
+                      className="bp-nm-text"
+                      x="8"
+                      y="26"
                     >
                       {dispName}
                     </text>
-
-                    {/* Integrated Slider Switch inside the IC body */}
-                    <rect className="trk" x="35" y="26" width="24" height="8" rx="4" />
-                    <circle className="knob" cx={isTurnedOn ? 53 : 41} cy="30" r="2.8" />
                   </g>
                 );
               })}

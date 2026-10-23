@@ -129,6 +129,44 @@ export default function App() {
     setAnalysisResult(FAILURE_PRESETS[0]);
   }, []);
 
+  const handleUpdateFileCode = useCallback(
+    (filePath, newContent) => {
+      setProject((prev) => {
+        if (!prev || !prev.byPath || !prev.byPath[filePath]) return prev;
+        const newLines = newContent.split('\n');
+        const updatedFile = {
+          ...prev.byPath[filePath],
+          content: newContent,
+          lines: newLines,
+          size: new Blob([newContent]).size
+        };
+        const updatedByPath = {
+          ...prev.byPath,
+          [filePath]: updatedFile
+        };
+        const updatedFiles = prev.files.map((f) =>
+          f.path === filePath ? updatedFile : f
+        );
+
+        const nextProject = {
+          ...prev,
+          files: updatedFiles,
+          byPath: updatedByPath
+        };
+
+        // Automatically re-evaluate trace if errorLog exists
+        if (errorLog) {
+          setTimeout(() => {
+            setAnalysisResult(analyzeErrorLog(errorLog, nextProject));
+          }, 50);
+        }
+
+        return nextProject;
+      });
+    },
+    [errorLog]
+  );
+
   const handleSelectPage = (pageId) => {
     setActivePage(pageId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -204,7 +242,10 @@ export default function App() {
                 selectedFile={selectedFile}
                 onSelectFile={setSelectedFile}
               />
-              <CodeViewer selectedFile={selectedFile} />
+              <CodeViewer
+                selectedFile={selectedFile}
+                onUpdateFileCode={handleUpdateFileCode}
+              />
             </div>
           </div>
         </div>
@@ -297,7 +338,15 @@ export default function App() {
             >
               Analyze Stack Trace
             </button>
-            <AnalysisResult result={analysisResult} />
+            <AnalysisResult
+              result={analysisResult}
+              project={project}
+              onUpdateFileCode={handleUpdateFileCode}
+              onOpenInExplorer={(filePath) => {
+                setSelectedFile(filePath);
+                handleSelectPage('explorer');
+              }}
+            />
             <ProjectRisks project={project} onUse={handleUseRisk} />
           </div>
         </div>
