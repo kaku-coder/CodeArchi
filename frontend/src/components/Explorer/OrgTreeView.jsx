@@ -116,6 +116,47 @@ function groupOf(filePath, level) {
   return dirParts.slice(0, level).join('/');
 }
 
+/**
+ * Position of an element inside the (possibly transformed) canvas, in the
+ * canvas' own untransformed coordinate space. Using offsetLeft/offsetTop keeps
+ * the connection wires accurate under zoom and 3D tilt.
+ */
+function isPathVisible(path, expanded) {
+  const parts = (path || '').split('/').filter(Boolean);
+  for (let i = 1; i < parts.length; i++) {
+    const ancestor = parts.slice(0, i).join('/');
+    if (!expanded.has(ancestor)) return false;
+  }
+  return true;
+}
+
+function offsetInCanvas(el, canvas) {
+  if (!el || !canvas) return null;
+
+  let x = 0;
+  let y = 0;
+  let node = el;
+
+  while (node && node !== canvas) {
+    x += node.offsetLeft || 0;
+    y += node.offsetTop || 0;
+    node = node.offsetParent;
+  }
+
+  if (node === canvas) {
+    return { x, y, width: el.offsetWidth, height: el.offsetHeight };
+  }
+
+  const elRect = el.getBoundingClientRect();
+  const canvasRect = canvas.getBoundingClientRect();
+  return {
+    x: elRect.left - canvasRect.left,
+    y: elRect.top - canvasRect.top,
+    width: elRect.width,
+    height: elRect.height
+  };
+}
+
 function OrgTreeNode({
   node,
   depth,
@@ -124,6 +165,8 @@ function OrgTreeNode({
   onSelectFile,
   expanded,
   toggle,
+  onActivate,
+  activeFolder,
   showGauges,
   showMetricPills,
   hideFiles,
@@ -136,6 +179,7 @@ function OrgTreeNode({
   const hasChildren = node.children.size > 0;
   const hasFiles = node.files.length > 0;
   const hasAny = hasChildren || hasFiles;
+  const showChildren = isOpen && (hasChildren || (!hideFiles && hasFiles));
 
   const setRef = useCallback(
     (el) => {
@@ -161,6 +205,8 @@ function OrgTreeNode({
               onSelectFile={onSelectFile}
               expanded={expanded}
               toggle={toggle}
+              onActivate={onActivate}
+              activeFolder={activeFolder}
               showGauges={showGauges}
               showMetricPills={showMetricPills}
               hideFiles={hideFiles}
@@ -179,13 +225,33 @@ function OrgTreeNode({
   const dirSelected = selectedFile && selectedFile.startsWith(node.path + '/');
   const links = connections.get(node.path) || [];
 
+  const isActiveFolder = activeFolder === node.path;
+  const isLinkedFolder =
+    !!activeFolder && activeFolder !== node.path && links.some((l) => l.path === activeFolder);
+
+  const handleFolderClick = () => {
+    if (hasAny) toggle(node.path);
+    onActivate(node.path);
+  };
+
   return (
-    <div ref={setRef} className={`org-branch-column ${dirSelected ? 'branch-active' : ''}`} data-org-path={node.path}>
-      <div className={`org-node-card dir-card ${dirSelected ? 'selected-card' : ''}`}>
+    <div
+      ref={setRef}
+      className={`org-branch-column ${dirSelected ? 'branch-active' : ''} ${isActiveFolder ? 'folder-is-active' : ''} ${
+        isLinkedFolder ? 'folder-is-linked' : ''
+      } ${isOpen ? 'is-open' : 'is-collapsed'}`}
+      style={{ '--node-depth': Math.min(depth, 5) }}
+      data-org-path={node.path}
+    >
+      <div
+        className={`org-node-card dir-card ${dirSelected ? 'selected-card' : ''} ${
+          isActiveFolder ? 'folder-card-active' : ''
+        } ${isLinkedFolder ? 'folder-card-linked' : ''}`}
+      >
         <button
           type="button"
           className="org-node-header org-node-header-btn"
-          onClick={() => hasAny && toggle(node.path)}
+          onClick={handleFolderClick}
           aria-expanded={isOpen}
         >
           <div className="org-node-title-group">
@@ -243,69 +309,75 @@ function OrgTreeNode({
           </div>
         )}
 
-        {isOpen && !hideFiles && hasAny && (
-          <div className="dir-file-members">
-            {[...node.children.values()]
-              .sort((a, b) => a.name.localeCompare(b.name))
-              .map((child) => (
-                <OrgTreeNode
-                  key={child.path}
-                  node={child}
-                  depth={depth + 1}
-                  totalProjectLines={totalProjectLines}
-                  selectedFile={selectedFile}
-                  onSelectFile={onSelectFile}
-                  expanded={expanded}
-                  toggle={toggle}
-                  showGauges={showGauges}
-                  showMetricPills={showMetricPills}
-                  hideFiles={hideFiles}
-                  dragStartRef={dragStartRef}
-                  nodeRefs={nodeRefs}
-                  connections={connections}
-                  isTopLevel={false}
-                />
-              ))}
+        {hasAny && (
+          <div className={`org-children ${showChildren ? 'is-open' : ''}`} aria-hidden={!showChildren}>
+            <div className="org-children-inner">
+              <div className="dir-file-members">
+                {[...node.children.values()]
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map((child) => (
+                    <OrgTreeNode
+                      key={child.path}
+                      node={child}
+                      depth={depth + 1}
+                      totalProjectLines={totalProjectLines}
+                      selectedFile={selectedFile}
+                      onSelectFile={onSelectFile}
+                      expanded={expanded}
+                      toggle={toggle}
+                      onActivate={onActivate}
+                      activeFolder={activeFolder}
+                      showGauges={showGauges}
+                      showMetricPills={showMetricPills}
+                      hideFiles={hideFiles}
+                      dragStartRef={dragStartRef}
+                      registerNode={registerNode}
+                      connections={connections}
+                    />
+                  ))}
 
-            {[...node.files]
-              .sort((a, b) => a.name.localeCompare(b.name))
-              .map((file) => {
-                const isFileCurrent = file.path === selectedFile;
-                const isTS = file.name.endsWith('.ts') || file.name.endsWith('.tsx');
-                const isJS = file.name.endsWith('.js') || file.name.endsWith('.jsx');
-                const isJSON = file.name.endsWith('.json');
-                const isImg = file.off;
+                {!hideFiles &&
+                  [...node.files]
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((file) => {
+                      const isFileCurrent = file.path === selectedFile;
+                      const isTS = file.name.endsWith('.ts') || file.name.endsWith('.tsx');
+                      const isJS = file.name.endsWith('.js') || file.name.endsWith('.jsx');
+                      const isJSON = file.name.endsWith('.json');
+                      const isImg = file.off;
 
-                const badgeBg = isTS ? '#3178c6' : isJS ? '#f7df1e' : isJSON ? '#cb3837' : isImg ? '#64748b' : '#8b5cf6';
-                const badgeColor = isJS ? '#000' : '#fff';
-                const badgeText = isTS ? 'TS' : isJS ? 'JS' : isJSON ? '{ }' : isImg ? 'IMG' : 'SRC';
+                      const badgeBg = isTS ? '#3178c6' : isJS ? '#f7df1e' : isJSON ? '#cb3837' : isImg ? '#64748b' : '#8b5cf6';
+                      const badgeColor = isJS ? '#000' : '#fff';
+                      const badgeText = isTS ? 'TS' : isJS ? 'JS' : isJSON ? '{ }' : isImg ? 'IMG' : 'SRC';
 
-                return (
-                  <button
-                    key={file.path}
-                    type="button"
-                    className={`leaf-file-card ${isFileCurrent ? 'leaf-active' : ''} ${file.off ? 'leaf-off' : ''}`}
-                    onClick={() => {
-                      if (!dragStartRef.current?.moved) {
-                        onSelectFile(file.path);
-                      }
-                    }}
-                  >
-                    <div className="file-avatar-badge" style={{ backgroundColor: badgeBg, color: badgeColor }}>
-                      {badgeText}
-                    </div>
-                    <div className="file-info-col">
-                      <div className="file-card-name" title={file.path}>
-                        {file.name}
-                      </div>
-                      <div className="file-card-role">
-                        {file.lang} • {file.lines}L
-                      </div>
-                    </div>
-                    {isFileCurrent && <span className="leaf-check-pill">Active</span>}
-                  </button>
-                );
-              })}
+                      return (
+                        <button
+                          key={file.path}
+                          type="button"
+                          className={`leaf-file-card ${isFileCurrent ? 'leaf-active' : ''} ${file.off ? 'leaf-off' : ''}`}
+                          onClick={() => {
+                            if (!dragStartRef.current?.moved) {
+                              onSelectFile(file.path);
+                            }
+                          }}
+                        >
+                          <div className="file-avatar-badge" style={{ backgroundColor: badgeBg, color: badgeColor }}>
+                            {badgeText}
+                          </div>
+                          <div className="file-info-col">
+                            <div className="file-card-name" title={file.path}>
+                              {file.name}
+                            </div>
+                            <div className="file-card-role">
+                              {file.lang} • {file.lines}L
+                            </div>
+                          </div>
+                          {isFileCurrent && <span className="leaf-check-pill">Active</span>}
+                        </button>
+                      );
+                    })}
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -325,6 +397,8 @@ export default function OrgTreeView({ selectedFile, onSelectFile }) {
   const [linkLevel, setLinkLevel] = useState(2);
 
   const [zoom, setZoom] = useState(0.9);
+  const [viewMode, setViewMode] = useState('2d');
+  const autoFitRef = useRef(true);
 
   const scrollContainerRef = useRef(null);
   const canvasRef = useRef(null);
@@ -334,20 +408,13 @@ export default function OrgTreeView({ selectedFile, onSelectFile }) {
 
   const nodeRefs = useRef({});
 
-  const [expanded, setExpanded] = useState(() => new Set());
-  const [lines, setLines] = useState([]);
+  const registerNode = useCallback((path, el) => {
+    nodeRefs.current[path] = el;
+  }, []);
 
-  const toggle = (path) => {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(path)) {
-        next.delete(path);
-      } else {
-        next.add(path);
-      }
-      return next;
-    });
-  };
+  const [manual, setManual] = useState({ open: [], closed: [] });
+  const [lines, setLines] = useState([]);
+  const [activeFolder, setActiveFolder] = useState(null);
 
   const handleMouseDown = (e) => {
     if (e.button !== 0) return;
@@ -446,16 +513,39 @@ export default function OrgTreeView({ selectedFile, onSelectFile }) {
     };
   }, []);
 
+  const fitToWidth = useCallback(() => {
+    const container = scrollContainerRef.current;
+    const canvas = canvasRef.current;
+    if (!container || !canvas) return;
+
+    const contentWidth = canvas.scrollWidth || canvas.offsetWidth;
+    if (!contentWidth) return;
+
+    const available = container.clientWidth - 28;
+    const next = Math.min(1.05, Math.max(0.45, available / contentWidth));
+    setZoom(Math.round(next * 100) / 100);
+  }, []);
+
   const handleFit = () => {
-    setZoom(0.9);
+    autoFitRef.current = true;
+    fitToWidth();
     if (scrollContainerRef.current) {
       const c = scrollContainerRef.current;
-      c.scrollTo({
-        left: Math.max(0, (c.scrollWidth - c.clientWidth) / 2),
-        top: 0,
-        behavior: 'smooth'
+      requestAnimationFrame(() => {
+        c.scrollTo({
+          left: Math.max(0, (c.scrollWidth - c.clientWidth) / 2),
+          top: 0,
+          behavior: 'smooth'
+        });
       });
     }
+  };
+
+  const changeZoom = (direction) => {
+    autoFitRef.current = false;
+    setZoom((z) =>
+      Math.min(1.5, Math.max(0.45, Math.round((z + direction * 0.1) * 10) / 10))
+    );
   };
 
   const treeData = useMemo(() => {
@@ -513,26 +603,26 @@ export default function OrgTreeView({ selectedFile, onSelectFile }) {
       );
     });
 
+    // File level edges, kept for the drilldown of a single folder
+    const fileEdges = edges.map(([from, to]) => ({
+      from,
+      to,
+      fromGroup: groupOf(from, linkLevel),
+      toGroup: groupOf(to, linkLevel)
+    }));
+
     return {
       rootName: project.name || 'Project Root',
       nested,
       connections,
       pairMap,
+      fileEdges,
       totalFiles: entries.length,
       totalLines: totalProjectLines,
       totalEdges: edges.length,
       totalSize: totalProjectSize
     };
   }, [project, linkLevel]);
-
-  useEffect(() => {
-    // Auto expand every folder needed to reveal the current link level
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      levelPaths.forEach((p) => next.add(p));
-      return next;
-    });
-  }, [levelPaths]);
 
   const levelPaths = useMemo(() => {
     const paths = [];
@@ -547,14 +637,58 @@ export default function OrgTreeView({ selectedFile, onSelectFile }) {
     return paths;
   }, [treeData.nested, linkLevel]);
 
-  const toggleAll = () => {
-    setExpanded((prev) => {
-      const allOpen = levelPaths.every((p) => prev.has(p));
-      const next = new Set();
-      if (!allOpen) levelPaths.forEach((p) => next.add(p));
-      return next;
+  // Effective expansion: auto paths (needed to reveal the link level) plus manual overrides
+  const expanded = useMemo(() => {
+    const set = new Set(levelPaths);
+    manual.open.forEach((p) => set.add(p));
+    manual.closed.forEach((p) => set.delete(p));
+    return set;
+  }, [levelPaths, manual]);
+
+  const toggle = (path) => {
+    setManual((prev) => {
+      const open = new Set(prev.open);
+      const closed = new Set(prev.closed);
+      if (expanded.has(path)) {
+        closed.add(path);
+        open.delete(path);
+      } else {
+        open.add(path);
+        closed.delete(path);
+      }
+      return { open: [...open], closed: [...closed] };
     });
   };
+
+  const toggleAll = () => {
+    setManual((prev) => {
+      const open = new Set(prev.open);
+      const closed = new Set(prev.closed);
+      const allOpen = levelPaths.every((p) => expanded.has(p));
+      levelPaths.forEach((p) => {
+        if (allOpen) {
+          closed.add(p);
+          open.delete(p);
+        } else {
+          open.add(p);
+          closed.delete(p);
+        }
+      });
+      return { open: [...open], closed: [...closed] };
+    });
+  };
+
+  const activeLinks = useMemo(
+    () => (activeFolder ? treeData.connections.get(activeFolder) || [] : []),
+    [activeFolder, treeData.connections]
+  );
+
+  const activeEdgeList = useMemo(() => {
+    if (!activeFolder) return [];
+    return treeData.fileEdges.filter(
+      (e) => e.fromGroup === activeFolder || e.toGroup === activeFolder
+    );
+  }, [activeFolder, treeData.fileEdges]);
 
   const updateConnections = useCallback(() => {
     if (!showConnections) {
@@ -570,21 +704,23 @@ export default function OrgTreeView({ selectedFile, onSelectFile }) {
       return;
     }
 
-    const canvasRect = canvas.getBoundingClientRect();
     const result = [];
 
     pairs.forEach((pair, key) => {
+      if (!isPathVisible(pair.a, expanded) || !isPathVisible(pair.b, expanded)) return;
+
       const elA = nodeRefs.current[pair.a];
       const elB = nodeRefs.current[pair.b];
       if (!elA || !elB) return;
 
-      const rectA = elA.getBoundingClientRect();
-      const rectB = elB.getBoundingClientRect();
+      const a = offsetInCanvas(elA, canvas);
+      const b = offsetInCanvas(elB, canvas);
+      if (!a || !b) return;
 
-      const x1 = rectA.left + rectA.width / 2 - canvasRect.left;
-      const y1 = rectA.top + rectA.height / 2 - canvasRect.top;
-      const x2 = rectB.left + rectB.width / 2 - canvasRect.left;
-      const y2 = rectB.top + rectB.height / 2 - canvasRect.top;
+      const x1 = a.x + a.width / 2;
+      const y1 = a.y + a.height / 2;
+      const x2 = b.x + b.width / 2;
+      const y2 = b.y + b.height / 2;
 
       let d;
       let labelX;
@@ -592,8 +728,8 @@ export default function OrgTreeView({ selectedFile, onSelectFile }) {
 
       if (Math.abs(x1 - x2) < 70) {
         // Stacked vertically: route the wire as a bracket off the right edge
-        const ax = rectA.right - canvasRect.left;
-        const bx = rectB.right - canvasRect.left;
+        const ax = a.x + a.width;
+        const bx = b.x + b.width;
         const sideX = Math.max(ax, bx) + 22;
         d = `M ${ax} ${y1} C ${sideX} ${y1}, ${sideX} ${y2}, ${bx} ${y2}`;
         labelX = sideX;
@@ -613,22 +749,46 @@ export default function OrgTreeView({ selectedFile, onSelectFile }) {
   }, [showConnections, treeData.pairMap, expanded]);
 
   useEffect(() => {
-    updateConnections();
-    const t = setTimeout(updateConnections, 150);
-    return () => clearTimeout(t);
-  }, [updateConnections, zoom, expanded]);
+    const raf = requestAnimationFrame(updateConnections);
+    const t = setTimeout(updateConnections, 380);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(t);
+    };
+  }, [updateConnections, zoom, expanded, viewMode, hideFiles]);
 
   useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-    const onScroll = () => updateConnections();
-    container.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll);
+    let t;
+    const onResize = () => {
+      clearTimeout(t);
+      t = setTimeout(updateConnections, 120);
+    };
+    window.addEventListener('resize', onResize);
     return () => {
-      container.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onScroll);
+      clearTimeout(t);
+      window.removeEventListener('resize', onResize);
     };
   }, [updateConnections]);
+
+  useEffect(() => {
+    if (!autoFitRef.current) return;
+    const raf = requestAnimationFrame(fitToWidth);
+    return () => cancelAnimationFrame(raf);
+  }, [treeData.nested, fitToWidth]);
+
+  useEffect(() => {
+    let t;
+    const onResize = () => {
+      if (!autoFitRef.current) return;
+      clearTimeout(t);
+      t = setTimeout(fitToWidth, 160);
+    };
+    window.addEventListener('resize', onResize);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener('resize', onResize);
+    };
+  }, [fitToWidth]);
 
   return (
     <div className="org-tree-workspace">
@@ -644,6 +804,26 @@ export default function OrgTreeView({ selectedFile, onSelectFile }) {
         </div>
 
         <div className="org-toolbar-actions">
+          <div className="org-view-toggle" role="group" aria-label="View mode">
+            <span className="view-toggle-label">VIEW</span>
+            <button
+              type="button"
+              className={`view-toggle-btn ${viewMode === '2d' ? 'on' : ''}`}
+              onClick={() => setViewMode('2d')}
+              title="Flat 2D tree"
+            >
+              ▦ 2D
+            </button>
+            <button
+              type="button"
+              className={`view-toggle-btn ${viewMode === '3d' ? 'on' : ''}`}
+              onClick={() => setViewMode('3d')}
+              title="Tilted 3D tree"
+            >
+              ◈ 3D
+            </button>
+          </div>
+
           {showConnections && (
             <div className="org-level-picker" title="Choose which folder level the connections are drawn between">
               <span className="level-picker-label">Link Level</span>
@@ -666,9 +846,9 @@ export default function OrgTreeView({ selectedFile, onSelectFile }) {
           </div>
 
           <div className="org-zoom-group">
-            <button type="button" className="org-zoom-btn" onClick={() => setZoom((z) => Math.max(0.5, Math.round((z - 0.1) * 10) / 10))} title="Zoom Out">−</button>
+            <button type="button" className="org-zoom-btn" onClick={() => changeZoom(-1)} title="Zoom Out">−</button>
             <span className="org-zoom-text">{Math.round(zoom * 100)}%</span>
-            <button type="button" className="org-zoom-btn" onClick={() => setZoom((z) => Math.min(1.5, Math.round((z + 0.1) * 10) / 10))} title="Zoom In">+</button>
+            <button type="button" className="org-zoom-btn" onClick={() => changeZoom(1)} title="Zoom In">+</button>
             <button type="button" className="org-zoom-reset" onClick={handleFit} title="Reset Zoom">Fit</button>
           </div>
 
@@ -710,7 +890,9 @@ export default function OrgTreeView({ selectedFile, onSelectFile }) {
 
       <div
         ref={scrollContainerRef}
-        className={`org-tree-scroll-container ${isDragging ? 'is-dragging' : ''}`}
+        className={`org-tree-scroll-container ${isDragging ? 'is-dragging' : ''} ${
+          viewMode === '3d' ? 'view-3d' : 'view-2d'
+        }`}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -718,35 +900,52 @@ export default function OrgTreeView({ selectedFile, onSelectFile }) {
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        <div ref={canvasRef} className="org-tree-canvas" style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}>
+        <div
+          ref={canvasRef}
+          className={`org-tree-canvas ${viewMode === '3d' ? 'canvas-3d' : 'canvas-2d'}`}
+          style={{
+            transform:
+              viewMode === '3d'
+                ? `scale(${zoom}) rotateX(var(--org-tilt, 11deg)) translateZ(0)`
+                : `scale(${zoom})`,
+            transformOrigin: 'top center'
+          }}
+        >
           {showConnections && lines.length > 0 && (
-            <svg className="org-conn-svg">
+            <svg className={`org-conn-svg ${activeFolder ? 'has-active' : ''}`}>
               <defs>
                 <linearGradient id="orgConnGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="rgba(255, 154, 74, 0.9)" />
                   <stop offset="100%" stopColor="rgba(167, 139, 250, 0.7)" />
                 </linearGradient>
               </defs>
-              {lines.map((line) => (
-                <g key={line.key}>
-                  <path d={line.d} className="org-conn-path" stroke="url(#orgConnGrad)" />
-                  <circle cx={line.x1} cy={line.y1} r={3.5} className="org-conn-dot" />
-                  <circle cx={line.x2} cy={line.y2} r={3.5} className="org-conn-dot" />
-                  <g className="org-conn-label-group">
-                    <rect
-                      x={line.labelX - 26}
-                      y={line.labelY - 8}
-                      width={52}
-                      height={16}
-                      rx={8}
-                      className="org-conn-label-bg"
+              {lines.map((line) => {
+                const isHot = activeFolder && (line.a === activeFolder || line.b === activeFolder);
+                return (
+                  <g key={line.key} className={isHot ? 'conn-group hot' : 'conn-group'}>
+                    <path
+                      d={line.d}
+                      className={isHot ? 'org-conn-path active' : 'org-conn-path'}
+                      stroke="url(#orgConnGrad)"
                     />
-                    <text x={line.labelX} y={line.labelY} className="org-conn-label" textAnchor="middle">
-                      {line.count} link{line.count > 1 ? 's' : ''}
-                    </text>
+                    <circle cx={line.x1} cy={line.y1} r={isHot ? 5 : 3.5} className="org-conn-dot" />
+                    <circle cx={line.x2} cy={line.y2} r={isHot ? 5 : 3.5} className="org-conn-dot" />
+                    <g className="org-conn-label-group">
+                      <rect
+                        x={line.labelX - 26}
+                        y={line.labelY - 8}
+                        width={52}
+                        height={16}
+                        rx={8}
+                        className="org-conn-label-bg"
+                      />
+                      <text x={line.labelX} y={line.labelY} className="org-conn-label" textAnchor="middle">
+                        {line.count} link{line.count > 1 ? 's' : ''}
+                      </text>
+                    </g>
                   </g>
-                </g>
-              ))}
+                );
+              })}
             </svg>
           )}
 
@@ -798,16 +997,62 @@ export default function OrgTreeView({ selectedFile, onSelectFile }) {
               onSelectFile={onSelectFile}
               expanded={expanded}
               toggle={toggle}
+              onActivate={setActiveFolder}
+              activeFolder={activeFolder}
               showGauges={showGauges}
               showMetricPills={showMetricPills}
               hideFiles={hideFiles}
               dragStartRef={dragStartRef}
-              nodeRefs={nodeRefs}
+              registerNode={registerNode}
               connections={treeData.connections}
             />
           </div>
         </div>
       </div>
+
+      {activeFolder && (
+        <div className="org-folder-detail">
+          <div className="folder-detail-head">
+            <span className="folder-detail-dot"></span>
+            <strong className="folder-detail-name">{activeFolder}/</strong>
+            <span className="folder-detail-sub">
+              {activeLinks.length} connected folder(s) • {activeEdgeList.length} import edge(s)
+            </span>
+            <button type="button" className="folder-detail-close" onClick={() => setActiveFolder(null)}>
+              ×
+            </button>
+          </div>
+
+          {activeLinks.length === 0 ? (
+            <p className="folder-detail-empty">
+              Is folder ka koi cross-folder import nahi he. Level L{linkLevel} par kuch bhi connected nahi.
+            </p>
+          ) : (
+            <>
+              <div className="folder-detail-chips">
+                {activeLinks.map((link) => (
+                  <span key={link.path} className="conn-chip">
+                    ⇄ {link.name}
+                    <span className="conn-chip-count">{link.count}</span>
+                  </span>
+                ))}
+              </div>
+              <div className="folder-detail-edges">
+                {activeEdgeList.slice(0, 40).map((edge, i) => (
+                  <div key={i} className="folder-detail-edge">
+                    <span className="edge-from">{edge.from}</span>
+                    <span className="edge-arrow">→</span>
+                    <span className="edge-to">{edge.to}</span>
+                  </div>
+                ))}
+                {activeEdgeList.length > 40 && (
+                  <div className="folder-detail-more">+{activeEdgeList.length - 40} more edges</div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {showConnections && treeData.pairMap.size > 0 && (
         <div className="org-conn-map">

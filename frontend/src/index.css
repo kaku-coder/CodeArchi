@@ -2141,6 +2141,124 @@ footer {
   margin: 0 auto;
   justify-content: safe center;
   padding: 30px 60px 50px;
+  transition: transform 0.38s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* 2D / 3D view switcher */
+.org-view-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 6px;
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.view-toggle-label {
+  font: 700 0.6rem 'Chakra Petch', sans-serif;
+  letter-spacing: 0.1em;
+  color: var(--mute);
+  margin-right: 3px;
+}
+
+.view-toggle-btn {
+  font: 700 0.68rem 'Chakra Petch', sans-serif;
+  color: var(--ink);
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+  padding: 2px 9px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.view-toggle-btn:hover {
+  background: rgba(168, 85, 247, 0.18);
+  color: #e9d5ff;
+}
+
+.view-toggle-btn.on {
+  background: linear-gradient(180deg, rgba(192, 132, 252, 0.9), rgba(139, 92, 246, 0.9));
+  color: #150c24;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.5);
+}
+
+/* Smooth animated folder drill-down */
+.org-children {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    grid-template-rows 0.34s cubic-bezier(0.22, 0.61, 0.36, 1),
+    opacity 0.24s ease,
+    visibility 0s linear 0.34s;
+}
+
+.org-children.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  visibility: visible;
+  transition:
+    grid-template-rows 0.34s cubic-bezier(0.22, 0.61, 0.36, 1),
+    opacity 0.3s ease 0.05s,
+    visibility 0s linear 0s;
+}
+
+.org-children-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* 3D tilted tree mode */
+.org-tree-scroll-container.view-3d {
+  perspective: 1600px;
+  perspective-origin: 50% 0%;
+  padding-top: 36px;
+}
+
+.org-tree-canvas.canvas-3d {
+  transform-style: preserve-3d;
+}
+
+.org-tree-canvas.canvas-3d .org-level,
+.org-tree-canvas.canvas-3d .org-level-branches,
+.org-tree-canvas.canvas-3d .org-branch-column,
+.org-tree-canvas.canvas-3d .dir-file-members,
+.org-tree-canvas.canvas-3d .org-children {
+  transform-style: preserve-3d;
+}
+
+.org-tree-canvas.canvas-3d .org-branch-column > .org-node-card {
+  transform: translateZ(calc(14px + var(--node-depth, 0) * 7px));
+  box-shadow:
+    0 14px 28px rgba(0, 0, 0, 0.55),
+    0 2px 0 rgba(255, 255, 255, 0.06) inset;
+}
+
+.org-tree-canvas.canvas-3d .root-card {
+  transform: translateZ(48px);
+  box-shadow:
+    0 26px 46px rgba(0, 0, 0, 0.62),
+    0 0 24px rgba(168, 85, 247, 0.24);
+}
+
+.org-tree-canvas.canvas-3d .org-branch-column > .org-node-card:hover {
+  transform: translateZ(calc(26px + var(--node-depth, 0) * 7px));
+}
+
+/* Dim unrelated wires while a folder is selected */
+.org-conn-svg.has-active .conn-group {
+  opacity: 0.16;
+  transition: opacity 0.22s ease;
+}
+
+.org-conn-svg.has-active .conn-group.hot {
+  opacity: 1;
 }
 
 /* Connection wires between top-level folders */
@@ -2522,6 +2640,164 @@ footer {
   background: rgba(251, 191, 36, 0.22);
   color: #fcd34d;
   box-shadow: inset 0 0 0 1px rgba(251, 191, 36, 0.45);
+}
+
+.org-conn-path.active {
+  stroke-width: 3;
+  opacity: 1;
+  stroke-dasharray: none;
+  filter: drop-shadow(0 0 14px rgba(251, 191, 36, 0.75));
+}
+
+.conn-group.hot .org-conn-dot {
+  fill: #fde68a;
+  filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.9));
+}
+
+/* Folder active / linked highlight states */
+.org-branch-column.folder-is-active .org-node-card {
+  border-color: #fbbf24;
+  box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.55), 0 12px 34px rgba(0, 0, 0, 0.6), 0 0 26px rgba(251, 191, 36, 0.28);
+}
+
+.org-branch-column.folder-is-active .org-node-title {
+  color: #fcd34d;
+}
+
+.org-branch-column.folder-is-linked .org-node-card {
+  border-color: rgba(167, 139, 250, 0.75);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45), 0 0 20px rgba(167, 139, 250, 0.32);
+}
+
+.org-branch-column.folder-is-linked .org-node-title {
+  color: #c4b5fd;
+}
+
+.org-branch-column.folder-is-linked .org-expand-arrow {
+  color: #c4b5fd;
+}
+
+.org-branch-column.folder-is-linked .dir-conn-chips {
+  border-top-color: rgba(167, 139, 250, 0.4);
+}
+
+/* Active folder detail panel */
+.org-folder-detail {
+  margin-top: 14px;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(30, 27, 20, 0.92), rgba(18, 18, 24, 0.92));
+  padding: 12px 14px;
+  animation: folderDetailIn 0.22s ease;
+}
+
+@keyframes folderDetailIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.folder-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 9px;
+}
+
+.folder-detail-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #fbbf24;
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.8);
+}
+
+.folder-detail-name {
+  font: 700 0.88rem ui-monospace, Menlo, monospace;
+  color: #fcd34d;
+}
+
+.folder-detail-sub {
+  font: 500 0.7rem 'Chakra Petch', sans-serif;
+  color: #94a3b8;
+}
+
+.folder-detail-close {
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+  color: var(--mute);
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+
+.folder-detail-close:hover {
+  color: #f1f5f9;
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.folder-detail-empty {
+  margin: 0;
+  font: 500 0.78rem 'Chakra Petch', sans-serif;
+  color: #94a3b8;
+}
+
+.folder-detail-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.folder-detail-edges {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 230px;
+  overflow: auto;
+}
+
+.folder-detail-edge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 0.72rem ui-monospace, Menlo, monospace;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 4px 9px;
+}
+
+.edge-from {
+  color: #7dd3fc;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.edge-arrow {
+  color: #fbbf24;
+}
+
+.edge-to {
+  color: #c4b5fd;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.folder-detail-more {
+  font: 0.7rem 'Chakra Petch', sans-serif;
+  color: #94a3b8;
+  padding: 2px 4px;
 }
 
 /* Folder Connection Map panel */
@@ -3044,3 +3320,113 @@ footer {
   background: #fbbf24;
   box-shadow: 0 0 6px #fbbf24;
 }
+/* Hierarchical tree: responsive behaviour */
+@media (max-width: 980px) {
+  .org-toolbar-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .org-pan-hint {
+    display: none;
+  }
+
+  .org-branch-column {
+    min-width: 180px;
+    max-width: 205px;
+    flex: 1 1 185px;
+  }
+
+  .org-tree-canvas {
+    padding: 26px 38px 44px;
+  }
+
+  .org-tree-canvas.canvas-3d {
+    --org-tilt: 8deg;
+  }
+}
+
+@media (max-width: 640px) {
+  .org-tree-workspace {
+    padding: 14px 10px 20px;
+    border-radius: 12px;
+    min-height: 440px;
+  }
+
+  .org-top-toolbar {
+    padding: 0 2px 12px;
+    margin-bottom: 14px;
+  }
+
+  .org-toolbar-actions {
+    gap: 8px;
+  }
+
+  .org-toolbar-stats {
+    display: none;
+  }
+
+  .org-tree-scroll-container {
+    max-height: 560px;
+    padding: 10px 4px 22px;
+  }
+
+  .org-tree-canvas {
+    padding: 20px 22px 34px;
+  }
+
+  .org-tree-canvas.canvas-3d {
+    --org-tilt: 5deg;
+  }
+
+  .org-branch-column {
+    min-width: 156px;
+    max-width: 175px;
+    flex: 1 1 160px;
+  }
+
+  .org-level-branches {
+    gap: 10px;
+  }
+
+  .org-node-card {
+    padding: 10px 11px;
+    border-radius: 10px;
+  }
+
+  .org-node-card.root-card {
+    width: 230px;
+  }
+
+  .org-node-title {
+    font-size: 0.82rem;
+  }
+
+  .card-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .org-children.is-open .dir-file-members {
+    margin-top: 8px;
+  }
+
+  .org-conn-label-group {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .org-tree-canvas {
+    transition: none;
+  }
+
+  .org-children,
+  .org-children.is-open {
+    transition: none;
+  }
+
+  .org-conn-path {
+    animation: none;
+  }
+}
+
